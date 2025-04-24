@@ -1,57 +1,74 @@
-# Movie Dash
+# MovieDash
 
-A web application for searching, browsing, and reviewing movies and TV shows using the TMDb API.
+A web application that allows users to discover, browse, and review movies and TV shows, utilizing data from The Movie Database (TMDb) API.
 
-## Features (Planned)
+## Backend Structure
 
-- Movie and TV show search functionality
-- Browse trending content
-- User authentication with Firebase
-- User reviews and ratings
-- Favorite movies/shows list
-- Responsive modern UI
+```plaintext
+backend/
+├── app/
+│   ├── models/     # Database models
+│   ├── routes/     # API endpoints
+│   └── utils/      # Helper functions
+├── config.py       # Configuration
+└── run.py         # Application entry
+```
 
-## Tech Stack
+## Database Schema
 
-- React.js
-- Firebase Authentication
-- TMDb API
-- CSS for styling
+### Users Table
+
+```sql
+users
+├── id (PRIMARY KEY)
+├── email (UNIQUE)
+├── google_id (UNIQUE)
+├── username
+└── created_at
+```
+
+### Favorites Table
+
+```sql
+favorites
+├── id (PRIMARY KEY)
+├── user_id (FOREIGN KEY -> users.id)
+├── movie_id
+└── added_at
+```
+
+### Reviews Table
+
+```sql
+reviews
+├── id (PRIMARY KEY)
+├── user_id (FOREIGN KEY -> users.id)
+├── movie_id
+├── rating (1-5)
+├── comment
+└── created_at
+```
+
+## Core API Endpoints
+
+### Auth
+
+- `/auth/google/login` - Google login
+- `/auth/logout` - Logout
+
+### User Features
+
+- `/api/favorites` - Manage favorite movies
+- `/api/reviews` - Manage movie reviews
+
+## Environment Variables
+
+```
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+TMDB_API_KEY=your_tmdb_api_key
+```
 
 ## Getting Started
 
-1. Clone the repository:
-
-```bash
-git clone https://github.com/Jiawei-Zhao-728/movie-dash.git
-```
-
-2. Install dependencies:
-
-```bash
-cd movie-dash
-npm install
-```
-
-3. Set up environment variables:
-
-   - Create a `.env` file in the root directory
-   - Add the following variables with your TMDb API credentials:
-
-   ```
-   REACT_APP_TMDB_API_KEY=your_api_key_here
-   REACT_APP_TMDB_API_READ_ACCESS_TOKEN=your_access_token_here
-   REACT_APP_TMDB_API_BASE_URL=https://api.themoviedb.org/3
-   ```
-
-   - You can get these credentials by:
-     1. Creating an account at [TMDb](https://www.themoviedb.org/)
-     2. Going to your account settings
-     3. Requesting an API key
-     4. Generating a read access token
-
-4. Start the development server:
-
-```bash
-npm start
-```
+[To be added: Installation and setup instructions]
