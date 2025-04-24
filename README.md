@@ -33,14 +33,25 @@ cd movie-dash
 npm install
 ```
 
-3. Start the development server:
+3. Set up environment variables:
+
+   - Create a `.env` file in the root directory
+   - Add the following variables with your TMDb API credentials:
+
+   ```
+   REACT_APP_TMDB_API_KEY=your_api_key_here
+   REACT_APP_TMDB_API_READ_ACCESS_TOKEN=your_access_token_here
+   REACT_APP_TMDB_API_BASE_URL=https://api.themoviedb.org/3
+   ```
+
+   - You can get these credentials by:
+     1. Creating an account at [TMDb](https://www.themoviedb.org/)
+     2. Going to your account settings
+     3. Requesting an API key
+     4. Generating a read access token
+
+4. Start the development server:
 
 ```bash
 npm start
 ```
-
-The application will be available at `http://localhost:3000`
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
