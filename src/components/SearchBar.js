@@ -195,13 +195,19 @@ const SearchBar = ({ onSearch, onBack }) => {
             variant="contained"
             onClick={handleSearch}
             sx={{
-              borderRadius: 6,
-              px: 3,
+              borderRadius: "28px",
+              padding: "8px 32px",
               height: 56,
+              textTransform: "none",
+              fontSize: "1rem",
               backgroundColor: "primary.main",
               color: "white",
+              boxShadow: "0 3px 5px 2px rgba(25, 118, 210, 0.15)",
+              transition: "all 0.3s ease",
               "&:hover": {
                 backgroundColor: "primary.dark",
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 8px 2px rgba(25, 118, 210, 0.2)",
               },
             }}
           >

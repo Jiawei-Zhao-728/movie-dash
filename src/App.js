@@ -6,10 +6,13 @@ import {
   CssBaseline,
 } from "@mui/material";
 import { ThemeProvider } from "./context/ThemeContext";
+import { AuthProvider } from "./context/AuthContext";
 import { useTheme } from "./context/ThemeContext";
 import Home from "./pages/Home";
 import MovieDetail from "./pages/MovieDetail";
 import ThemeToggle from "./components/ThemeToggle";
+import Login from "./components/Login";
+import Header from "./components/Header";
 
 const AppContent = () => {
   const { isDarkMode } = useTheme();
@@ -62,22 +65,26 @@ const AppContent = () => {
   return (
     <MuiThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/movie/:id" element={<MovieDetail />} />
-        </Routes>
-        <ThemeToggle />
-      </Router>
+      <Header />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/movie/:id" element={<MovieDetail />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+      <ThemeToggle />
     </MuiThemeProvider>
   );
 };
 
 function App() {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <Router>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ThemeProvider>
+    </Router>
   );
 }
 

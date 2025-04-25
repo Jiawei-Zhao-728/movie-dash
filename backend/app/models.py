@@ -1,18 +1,42 @@
 from datetime import datetime
 from app import db
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    google_id = db.Column(db.String(100), unique=True)
-    username = db.Column(db.String(80))
+    username = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(128))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
     favorites = db.relationship('Favorite', backref='user', lazy=True)
     reviews = db.relationship('Review', backref='user', lazy=True)
+
+    __table_args__ = (
+        db.UniqueConstraint('username', name='uq_user_username'),
+        db.UniqueConstraint('email', name='uq_user_email'),
+    )
+
+    def __repr__(self):
+        return f'<User {self.username}>'
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+        
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'created_at': self.created_at.isoformat()
+        }
 
 class Favorite(db.Model):
     __tablename__ = 'favorites'
