@@ -61,3 +61,13 @@ class Review(db.Model):
 
     # Ensure a user can only review a movie once
     __table_args__ = (db.UniqueConstraint('user_id', 'movie_id'),) 
+
+class Watchlist(db.Model):
+    __tablename__ = 'watchlist'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    movie_id = db.Column(db.Integer, nullable=False)  # TMDB movie ID
+    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Ensure a user can't add the same movie to watchlist twice
+    __table_args__ = (db.UniqueConstraint('user_id', 'movie_id'),) 

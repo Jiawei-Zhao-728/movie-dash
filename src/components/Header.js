@@ -108,7 +108,7 @@ const Header = () => {
             <Button
               color="primary"
               variant="contained"
-              onClick={login}
+              onClick={() => navigate("/login")}
               sx={{
                 borderRadius: 20,
                 px: 3,

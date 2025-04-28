@@ -1,15 +1,38 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Box, Typography, Rating, Chip } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Rating,
+  Chip,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
 import DetailModal from "./DetailModal";
+import { useWatchlist } from "../context/WatchlistContext";
 
 const ModernMovieCard = ({ movie }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist, loading } =
+    useWatchlist();
 
   const imageUrl = movie.poster_path
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
     : "https://via.placeholder.com/500x750?text=No+Image+Available";
+
+  const inWatchlist = isInWatchlist(movie.id);
+
+  const handleWatchlistClick = (e) => {
+    e.stopPropagation();
+    if (inWatchlist) {
+      removeFromWatchlist(movie.id);
+    } else {
+      addToWatchlist(movie.id);
+    }
+  };
 
   return (
     <>
@@ -50,6 +73,29 @@ const ModernMovieCard = ({ movie }) => {
             transform: isHovered ? "scale(1.05)" : "scale(1)",
           }}
         />
+
+        {/* Watchlist Button */}
+        <Tooltip
+          title={inWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
+        >
+          <IconButton
+            onClick={handleWatchlistClick}
+            sx={{
+              position: "absolute",
+              top: 10,
+              right: 10,
+              zIndex: 2,
+              background: "rgba(0,0,0,0.6)",
+              color: inWatchlist ? "#ffd600" : "white",
+              "&:hover": {
+                background: "rgba(0,0,0,0.8)",
+              },
+            }}
+            disabled={loading}
+          >
+            {inWatchlist ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+          </IconButton>
+        </Tooltip>
 
         <Box
           sx={{

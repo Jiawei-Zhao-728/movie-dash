@@ -1,8 +1,9 @@
-from flask import jsonify, request
-from . import bp
+from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from ..services.tmdb import TMDBService
-from ..models import db, UserMovie
+from ..models import db, Favorite, Watchlist
+
+bp = Blueprint('movies', __name__)
 
 tmdb = TMDBService()
 
@@ -45,7 +46,7 @@ def search_movies():
 @login_required
 def handle_favorites():
     if request.method == 'GET':
-        favorites = UserMovie.query.filter_by(user_id=current_user.id).all()
+        favorites = Favorite.query.filter_by(user_id=current_user.id).all()
         return jsonify([{
             'id': fav.movie_id,
             'added_at': fav.added_at.isoformat()
@@ -57,7 +58,7 @@ def handle_favorites():
         
     if request.method == 'POST':
         try:
-            favorite = UserMovie(user_id=current_user.id, movie_id=movie_id)
+            favorite = Favorite(user_id=current_user.id, movie_id=movie_id)
             db.session.add(favorite)
             db.session.commit()
             return jsonify({'message': 'Movie added to favorites'})
@@ -67,12 +68,47 @@ def handle_favorites():
             
     if request.method == 'DELETE':
         try:
-            UserMovie.query.filter_by(
+            Favorite.query.filter_by(
                 user_id=current_user.id,
                 movie_id=movie_id
             ).delete()
             db.session.commit()
             return jsonify({'message': 'Movie removed from favorites'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+@bp.route('/movies/watchlist', methods=['GET', 'POST', 'DELETE'])
+@login_required
+def handle_watchlist():
+    if request.method == 'GET':
+        watchlist = Watchlist.query.filter_by(user_id=current_user.id).all()
+        return jsonify([
+            {'id': item.movie_id, 'added_at': item.added_at.isoformat()} for item in watchlist
+        ])
+
+    movie_id = request.json.get('movieId')
+    if not movie_id:
+        return jsonify({'error': 'Movie ID is required'}), 400
+
+    if request.method == 'POST':
+        try:
+            item = Watchlist(user_id=current_user.id, movie_id=movie_id)
+            db.session.add(item)
+            db.session.commit()
+            return jsonify({'message': 'Movie added to watchlist'})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
+    if request.method == 'DELETE':
+        try:
+            Watchlist.query.filter_by(
+                user_id=current_user.id,
+                movie_id=movie_id
+            ).delete()
+            db.session.commit()
+            return jsonify({'message': 'Movie removed from watchlist'})
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': str(e)}), 500 

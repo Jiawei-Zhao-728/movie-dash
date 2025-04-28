@@ -7,11 +7,13 @@ import {
 } from "@mui/material";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
+import { WatchlistProvider } from "./context/WatchlistContext";
 import { useTheme } from "./context/ThemeContext";
 import Home from "./pages/Home";
 import MovieDetail from "./pages/MovieDetail";
 import ThemeToggle from "./components/ThemeToggle";
 import Login from "./components/Login";
+import Register from "./components/Register";
 import Header from "./components/Header";
 
 const AppContent = () => {
@@ -70,6 +72,7 @@ const AppContent = () => {
         <Route path="/" element={<Home />} />
         <Route path="/movie/:id" element={<MovieDetail />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
       </Routes>
       <ThemeToggle />
     </MuiThemeProvider>
@@ -81,7 +84,9 @@ function App() {
     <Router>
       <ThemeProvider>
         <AuthProvider>
-          <AppContent />
+          <WatchlistProvider>
+            <AppContent />
+          </WatchlistProvider>
         </AuthProvider>
       </ThemeProvider>
     </Router>

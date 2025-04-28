@@ -3,8 +3,9 @@ import { useAuth } from "../context/AuthContext";
 import { Navigate } from "react-router-dom";
 import "./Login.css";
 
-const Login = () => {
-  const { user, login, loading, error } = useAuth();
+const Register = () => {
+  const { user, register, loading, error } = useAuth();
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState(null);
@@ -16,19 +17,27 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError(null);
-    if (!email || !password) {
-      setFormError("Please enter both email and password.");
+    if (!username || !email || !password) {
+      setFormError("Please fill in all fields.");
       return;
     }
-    await login(email, password);
+    await register(username, email, password);
   };
 
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>Welcome to MovieDash</h1>
-        <p>Please sign in to continue</p>
+        <h1>Create an Account</h1>
+        <p>Sign up to get started with MovieDash</p>
         <form onSubmit={handleSubmit} className="login-form">
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
+            disabled={loading}
+          />
           <input
             type="email"
             placeholder="Email"
@@ -42,22 +51,22 @@ const Login = () => {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
+            autoComplete="new-password"
             disabled={loading}
           />
           <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? "Registering..." : "Register"}
           </button>
           {(formError || error) && (
             <div className="login-error">{formError || error}</div>
           )}
         </form>
         <div className="login-register-link">
-          Don't have an account? <a href="/register">Register</a>
+          Already have an account? <a href="/login">Sign In</a>
         </div>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default Register;

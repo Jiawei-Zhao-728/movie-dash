@@ -22,3 +22,4 @@ class Config:
     
     # TMDB API configuration
     TMDB_API_KEY = os.environ.get('TMDB_API_KEY')
+ 
