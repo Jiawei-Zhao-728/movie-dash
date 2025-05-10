@@ -22,4 +22,7 @@ class Config:
     
     # TMDB API configuration
     TMDB_API_KEY = os.environ.get('TMDB_API_KEY')
+
+    SESSION_COOKIE_SAMESITE = "Lax"  # or "None" if using HTTPS
+    SESSION_COOKIE_SECURE = False    # Should be False for local dev unless using HTTPS
  
