@@ -1,5 +1,6 @@
 package com.moviedash.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,6 +29,7 @@ public class User {
     private String email;
 
     @Column(nullable = false)
+    @JsonIgnore  // Never expose password in JSON
     private String password;
 
     @CreationTimestamp
@@ -35,9 +37,11 @@ public class User {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore  // Prevent circular reference and unnecessary data exposure
     private Set<Favorite> favorites = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore  // Prevent circular reference and unnecessary data exposure
     private Set<Review> reviews = new HashSet<>();
 
 }
