@@ -70,13 +70,13 @@ const Header = () => {
 
           {user ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Typography variant="body1">{user.name}</Typography>
+              <Typography variant="body1">{user.username}</Typography>
               <IconButton onClick={handleMenu} size="small" sx={{ padding: 0 }}>
                 <Avatar
-                  src={user.picture}
-                  alt={user.name}
-                  sx={{ width: 40, height: 40 }}
-                />
+                  sx={{ width: 40, height: 40, bgcolor: "primary.main" }}
+                >
+                  {user.username ? user.username[0].toUpperCase() : "U"}
+                </Avatar>
               </IconButton>
               <Menu
                 id="menu-appbar"
