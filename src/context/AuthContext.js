@@ -10,20 +10,22 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Check session on mount
+  // Check session on mount using JWT token
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:5000/auth/me", {
-          credentials: "include",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data); // /auth/me returns user.to_dict()
+        // Check if token exists in localStorage
+        const token = localStorage.getItem("token");
+        if (token) {
+          // Try to get current user with the token
+          const userData = await authService.getCurrentUser();
+          setUser(userData); // Backend returns user object directly
         } else {
           setUser(null);
         }
-      } catch {
+      } catch (err) {
+        // Token expired or invalid, clear it
+        localStorage.removeItem("token");
         setUser(null);
       } finally {
         setLoading(false);
@@ -38,6 +40,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const data = await authService.login(email, password);
+      // authService.login returns { token, user }
       setUser(data.user);
       setLoading(false);
       navigate("/", { replace: true });
@@ -55,6 +58,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const data = await authService.register(username, email, password);
+      // authService.register returns { token, user }
       setUser(data.user);
       setLoading(false);
       navigate("/", { replace: true });
@@ -74,6 +78,7 @@ export const AuthProvider = ({ children }) => {
       await authService.logout();
     } catch (err) {
       // If logout fails (401/403), treat as already logged out
+      console.error("Logout error:", err);
     } finally {
       setUser(null);
       setLoading(false);

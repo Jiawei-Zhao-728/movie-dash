@@ -16,9 +16,11 @@ export const WatchlistProvider = ({ children }) => {
     setLoading(true);
     try {
       const data = await authService.getWatchlist();
+      // Backend returns array of favorites: [{ id, movieId, addedAt }]
       setWatchlist(data);
     } catch (err) {
       setWatchlist([]);
+      console.error("Failed to fetch watchlist:", err);
     } finally {
       setLoading(false);
     }
@@ -30,7 +32,7 @@ export const WatchlistProvider = ({ children }) => {
       await authService.addToWatchlist(movieId);
       await fetchWatchlist();
     } catch (err) {
-      // handle error
+      console.error("Failed to add to watchlist:", err);
     } finally {
       setLoading(false);
     }
@@ -42,14 +44,15 @@ export const WatchlistProvider = ({ children }) => {
       await authService.removeFromWatchlist(movieId);
       await fetchWatchlist();
     } catch (err) {
-      // handle error
+      console.error("Failed to remove from watchlist:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const isInWatchlist = (movieId) => {
-    return watchlist.some((item) => item.id === movieId);
+    // Backend Favorite entity has `movieId` field, not `id`
+    return watchlist.some((item) => item.movieId === movieId);
   };
 
   return (
@@ -60,6 +63,7 @@ export const WatchlistProvider = ({ children }) => {
         addToWatchlist,
         removeFromWatchlist,
         isInWatchlist,
+        fetchWatchlist,
       }}
     >
       {children}
