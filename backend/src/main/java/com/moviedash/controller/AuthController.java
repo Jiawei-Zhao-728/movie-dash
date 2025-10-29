@@ -1,8 +1,13 @@
 package com.moviedash.controller;
 
+import com.moviedash.dto.response.ApiResponse;
 import com.moviedash.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -11,6 +16,14 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final UserService userService;
+
+    @GetMapping("/test")
+    public ResponseEntity<ApiResponse<Map<String, String>>> test() {
+        Map<String, String> data = new HashMap<>();
+        data.put("status", "running");
+        data.put("message", "MovieDash API is working!");
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
 
     // TODO: Implement authentication endpoints
     // POST /auth/register
