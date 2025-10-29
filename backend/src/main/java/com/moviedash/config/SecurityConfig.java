@@ -1,6 +1,8 @@
 package com.moviedash.config;
 
 import com.moviedash.security.JwtAuthenticationFilter;
+import com.moviedash.security.JwtUtil;
+import com.moviedash.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,11 +20,15 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Lazy
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtUtil jwtUtil;
+    private final UserService userService;
+
+    public SecurityConfig(JwtUtil jwtUtil, @Lazy UserService userService) {
+        this.jwtUtil = jwtUtil;
+        this.userService = userService;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -35,6 +41,11 @@ public class SecurityConfig {
     }
 
     @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtUtil, userService);
+    }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
@@ -42,9 +53,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/", "/h2-console/**").permitAll()
-                        .requestMatchers("/reviews/movie/**").permitAll()  // Public: view movie reviews
+                        .requestMatchers("/reviews/movie/**").permitAll() // Public: view movie reviews
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthenticationFilter,
+                .addFilterBefore(jwtAuthenticationFilter(),
                         org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         // Allow H2 console frames
