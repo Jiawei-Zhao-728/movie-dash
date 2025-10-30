@@ -1,10 +1,12 @@
 package com.moviedash.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -14,6 +16,8 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"user"})  // Exclude lazy-loaded User from toString() to prevent LazyInitializationException
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})  // Prevent Hibernate proxy serialization issues
 public class Review {
 
     @Id

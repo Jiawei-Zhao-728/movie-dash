@@ -85,12 +85,20 @@ export const authService = {
         method: "GET",
         headers: getHeaders(),
       });
-      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || "Failed to get user");
+        let errorMsg = "Failed to get user";
+        try {
+          const result = await response.json();
+          errorMsg = result.message || result.error || errorMsg;
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMsg = response.statusText || errorMsg;
+        }
+        throw new Error(errorMsg);
       }
 
+      const result = await response.json();
       // Backend returns: { success: true, message: "...", data: { id, username, email } }
       return result.data; // Returns user object
     } catch (error) {
@@ -128,7 +136,17 @@ export const authService = {
         headers: getHeaders(),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch favorites");
+      if (!response.ok) {
+        let errorMsg = "Failed to fetch favorites";
+        try {
+          const result = await response.json();
+          errorMsg = result.message || result.error || errorMsg;
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMsg = response.statusText || errorMsg;
+        }
+        throw new Error(errorMsg);
+      }
 
       const result = await response.json();
       // Backend returns: { success: true, data: [{ id, movieId, addedAt }] }
@@ -146,12 +164,30 @@ export const authService = {
         body: JSON.stringify({ movieId }),
       });
 
-      if (!response.ok) throw new Error("Failed to add to favorites");
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        // If JSON parsing fails (e.g., ERR_INCOMPLETE_CHUNKED_ENCODING), 
+        // provide a more helpful error message
+        const statusText = response.statusText || "Unknown error";
+        throw new Error(`Server error (${response.status}): ${statusText}. Response may be incomplete.`);
+      }
+      
+      if (!response.ok) {
+        // Extract actual error message from backend ApiResponse format
+        const errorMsg = result.message || result.error || "Failed to add to favorites";
+        throw new Error(errorMsg);
+      }
 
-      const result = await response.json();
       return result.data;
     } catch (error) {
-      throw error;
+      // If error is already an Error object with message, rethrow it
+      // Otherwise wrap it in a new Error
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(error.message || "Failed to add to favorites");
     }
   },
 

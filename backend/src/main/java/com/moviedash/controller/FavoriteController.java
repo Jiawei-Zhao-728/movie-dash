@@ -28,9 +28,16 @@ public class FavoriteController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<Favorite>>> getUserFavorites(
             Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
-        List<Favorite> favorites = favoriteService.getUserFavorites(user.getId());
-        return ResponseEntity.ok(ApiResponse.success(favorites));
+        try {
+            User user = (User) authentication.getPrincipal();
+            List<Favorite> favorites = favoriteService.getUserFavorites(user.getId());
+            return ResponseEntity.ok(ApiResponse.success(favorites));
+        } catch (Exception e) {
+            System.err.println("Error getting favorites: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to fetch favorites: " + e.getMessage()));
+        }
     }
 
     /**
@@ -44,12 +51,33 @@ public class FavoriteController {
         try {
             User user = (User) authentication.getPrincipal();
             Favorite favorite = favoriteService.addFavorite(user, request.getMovieId());
-            return ResponseEntity.ok(
-                    ApiResponse.success("Added to favorites", favorite)
-            );
+            
+            // Create a response with the favorite, ensuring serialization works
+            try {
+                return ResponseEntity.ok(
+                        ApiResponse.success("Added to favorites", favorite)
+                );
+            } catch (Exception e) {
+                // If serialization fails, return a simpler response
+                System.err.println("Error serializing favorite: " + e.getMessage());
+                e.printStackTrace();
+                // Return just the movieId and id to avoid serialization issues
+                Favorite simpleFavorite = new Favorite();
+                simpleFavorite.setId(favorite.getId());
+                simpleFavorite.setMovieId(favorite.getMovieId());
+                simpleFavorite.setAddedAt(favorite.getAddedAt());
+                return ResponseEntity.ok(
+                        ApiResponse.success("Added to favorites", simpleFavorite)
+                );
+            }
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            System.err.println("Unexpected error in addFavorite: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Failed to add favorite: " + e.getMessage()));
         }
     }
 

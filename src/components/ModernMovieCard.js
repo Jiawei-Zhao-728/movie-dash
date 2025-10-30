@@ -78,23 +78,21 @@ const ModernMovieCard = ({ movie }) => {
         <Tooltip
           title={inWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
         >
-          <IconButton
-            onClick={handleWatchlistClick}
-            sx={{
-              position: "absolute",
-              top: 10,
-              right: 10,
-              zIndex: 2,
-              background: "rgba(0,0,0,0.6)",
-              color: inWatchlist ? "#ffd600" : "white",
-              "&:hover": {
-                background: "rgba(0,0,0,0.8)",
-              },
-            }}
-            disabled={loading}
-          >
-            {inWatchlist ? <BookmarkIcon /> : <BookmarkBorderIcon />}
-          </IconButton>
+          <span style={{ position: "absolute", top: 10, right: 10, zIndex: 2 }}>
+            <IconButton
+              onClick={handleWatchlistClick}
+              sx={{
+                background: "rgba(0,0,0,0.6)",
+                color: inWatchlist ? "#ffd600" : "white",
+                "&:hover": {
+                  background: "rgba(0,0,0,0.8)",
+                },
+              }}
+              disabled={loading}
+            >
+              {inWatchlist ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+            </IconButton>
+          </span>
         </Tooltip>
 
         <Box

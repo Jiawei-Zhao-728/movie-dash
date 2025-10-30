@@ -62,9 +62,11 @@ export const searchTVShows = async (query, page = 1, additionalParams = {}) => {
   }
 };
 
-export const getTrendingMovies = async () => {
+export const getTrendingMovies = async (page = 1) => {
   try {
-    const response = await tmdbApi.get("/trending/movie/week");
+    const response = await tmdbApi.get("/trending/movie/week", {
+      params: { page }
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching trending movies:", error);
