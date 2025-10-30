@@ -12,6 +12,7 @@ import { useTheme } from "./context/ThemeContext";
 import Home from "./pages/Home";
 import MovieDetail from "./pages/MovieDetail";
 import Profile from "./pages/Profile";
+import Favorites from "./pages/Favorites";
 import ThemeToggle from "./components/ThemeToggle";
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -73,6 +74,7 @@ const AppContent = () => {
         <Route path="/" element={<Home />} />
         <Route path="/movie/:id" element={<MovieDetail />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/favorites" element={<Favorites />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Routes>

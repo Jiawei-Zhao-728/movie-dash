@@ -221,7 +221,7 @@ const Profile = () => {
               <Button
                 variant="outlined"
                 fullWidth
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/favorites")}
                 sx={{
                   py: 1.5,
                   borderRadius: 2,
