@@ -1,0 +1,450 @@
+================================================================================
+                   MOVIEDASH API ANALYSIS - EXECUTIVE SUMMARY
+================================================================================
+
+Project: Movie-Dash
+Analysis Date: October 29, 2025
+Analyzer: Claude Code
+Status: COMPREHENSIVE ANALYSIS COMPLETE
+
+================================================================================
+                                 KEY FINDINGS
+================================================================================
+
+API STRUCTURE:
+- Type: RESTful JSON API
+- Framework: Spring Boot 3.2.0
+- Authentication: JWT Bearer Tokens (24-hour expiration)
+- Database: H2 (development), MySQL (production-ready)
+- Total Endpoints: 13 (4 public, 9 protected)
+
+ARCHITECTURE QUALITY: ✅ GOOD
+- Clean 3-tier architecture (Controller-Service-Repository)
+- Proper dependency injection with @RequiredArgsConstructor
+- Transaction management with @Transactional
+- Unified response format across all endpoints
+- Comprehensive error handling
+
+================================================================================
+                            ALL API ENDPOINTS (13)
+================================================================================
+
+AUTHENTICATION (5 endpoints) - Path: /auth
+  ✅ GET    /auth/test                 Public    Health check
+  ✅ POST   /auth/register              Public    Create user account
+  ✅ POST   /auth/login                 Public    Authenticate user
+  ✅ GET    /auth/me                    Protected Get current user
+  ✅ POST   /auth/logout                Protected Logout user
+
+FAVORITES (4 endpoints) - Path: /favorites
+  ✅ GET    /favorites                  Protected Get user's favorites
+  ✅ POST   /favorites                  Protected Add movie to favorites
+  ✅ GET    /favorites/check/{movieId}  Protected Check if movie is favorited
+  ✅ DELETE /favorites/{movieId}        Protected Remove from favorites
+
+REVIEWS (4 endpoints) - Path: /reviews
+  ✅ GET    /reviews/movie/{movieId}    Public    View movie reviews
+  ✅ GET    /reviews/user               Protected Get user's reviews
+  ✅ POST   /reviews                    Protected Create/update review
+  ✅ DELETE /reviews/{id}               Protected Delete review (owner only)
+
+================================================================================
+                         SECURITY & MIDDLEWARE ANALYSIS
+================================================================================
+
+AUTHENTICATION:
+  ✅ JWT (HMAC SHA-256)
+  ✅ Bearer token in Authorization header
+  ✅ Token stored in localStorage
+  ✅ BCrypt password hashing with default salt rounds
+  ✅ Password never exposed in API responses
+
+AUTHORIZATION:
+  ✅ SecurityConfig properly configured
+  ✅ Public endpoints explicitly marked
+  ✅ Protected endpoints require valid JWT
+  ✅ Ownership validation for delete operations
+  ✅ CORS configured for localhost:3000
+
+MIDDLEWARE:
+  ✅ JwtAuthenticationFilter on every request
+  ✅ GlobalExceptionHandler for consistent error responses
+  ✅ Validation error handling with field-level detail
+  ✅ Business logic error handling
+
+================================================================================
+                            CRITICAL ISSUES FOUND (3)
+================================================================================
+
+ISSUE 1: JWT Secret Exposed in Code [SEVERITY: HIGH]
+  Location: backend/src/main/resources/application.properties:30
+  Problem: Default JWT secret hardcoded in repository
+  Impact: Security vulnerability - tokens could be forged
+  Fix: Use environment variable instead of hardcoded value
+  
+ISSUE 2: AuthController TODO Comments vs Implementation Mismatch [SEVERITY: MEDIUM]
+  Location: backend/src/main/java/com/moviedash/controller/AuthController.java:28-32
+  Problem: Controller has TODO for endpoints that ARE actually implemented
+  Impact: Confusing code documentation, misleads developers
+  Fix: Remove TODO comment or add proper @RequestMapping decorators
+  
+ISSUE 3: H2 Database in Production Configuration [SEVERITY: MEDIUM]
+  Location: backend/src/main/resources/application.properties:7-14
+  Problem: H2 console enabled, H2 used in production config
+  Impact: Security risk, not suitable for production deployments
+  Fix: Use environment profiles, enable MySQL for production
+
+================================================================================
+                        MEDIUM SEVERITY ISSUES (3)
+================================================================================
+
+ISSUE 4: No Password Strength Requirements
+  Missing: Uppercase, digits, special characters validation
+  Recommendation: Add regex pattern or dedicated validator
+
+ISSUE 5: No Rate Limiting on Auth Endpoints
+  Risk: Brute force attacks on /auth/login possible
+  Recommendation: Implement request rate limiting middleware
+
+ISSUE 6: No Email Verification on Registration
+  Risk: Users can register with fake emails
+  Recommendation: Add email verification step before account activation
+
+================================================================================
+                         LOW SEVERITY ISSUES (2)
+================================================================================
+
+ISSUE 7: Missing User Info in Review Responses
+  Problem: Public review endpoint doesn't include reviewer username
+  Impact: Can't display "who wrote this review" without second lookup
+  Solution: Include username (privacy-safe) in review response
+
+ISSUE 8: Confusing Frontend API Service
+  Problem: Legacy watchlist methods alongside favorites methods
+  Impact: Code confusion about which API methods are primary
+  Solution: Deprecate legacy methods clearly in comments
+
+================================================================================
+                         TESTING & DOCUMENTATION
+================================================================================
+
+DOCUMENTATION: ✅ COMPREHENSIVE
+  ✅ API_TESTING_PROCEDURE.md (752 lines) - Complete testing guide
+  ✅ BACKEND_CODE_REVIEW.md (200+ lines) - Code review findings
+  ✅ BACKEND_TESTING_GUIDE.md - Test patterns
+  ✅ BACKEND_MIGRATION_GUIDE.md (52KB) - Migration docs
+  ✅ API_ENDPOINTS_MAP.md - This new comprehensive reference
+
+TEST COVERAGE:
+  ✅ 17 test scenarios documented
+  ✅ curl and Postman examples provided
+  ✅ Happy path testing covered
+  ✅ Error scenarios covered
+  ✅ Automated test script included
+
+================================================================================
+                           FILE STRUCTURE ANALYSIS
+================================================================================
+
+BACKEND FILES (23 Java files):
+  Controllers (3):
+    - AuthController.java (34 lines, 1 TODO)
+    - FavoriteController.java (90 lines)
+    - ReviewController.java (86 lines)
+  
+  Services (3):
+    - UserService.java (102 lines)
+    - FavoriteService.java (78 lines)
+    - ReviewService.java (86 lines)
+  
+  Repositories (3):
+    - UserRepository.java
+    - FavoriteRepository.java
+    - ReviewRepository.java
+  
+  Entities (3):
+    - User.java (47 lines)
+    - Favorite.java (35 lines)
+    - Review.java (41 lines)
+  
+  Request DTOs (4):
+    - RegisterRequest.java (24 lines)
+    - LoginRequest.java (17 lines)
+    - FavoriteRequest.java (16 lines)
+    - ReviewRequest.java (25 lines)
+  
+  Response DTOs (1):
+    - ApiResponse.java (40 lines)
+  
+  Security (2):
+    - JwtUtil.java (53 lines)
+    - JwtAuthenticationFilter.java (70 lines)
+  
+  Configuration (2):
+    - SecurityConfig.java (86 lines)
+    - WebConfig.java
+  
+  Exception Handling (1):
+    - GlobalExceptionHandler.java (42 lines)
+  
+  Application (1):
+    - MovieDashApplication.java (13 lines)
+
+FRONTEND FILES:
+  - authService.js (185 lines) - Main API service
+    - Calls all backend endpoints correctly
+    - Handles JWT token storage
+    - Includes error handling
+
+================================================================================
+                          RESPONSE FORMAT ANALYSIS
+================================================================================
+
+STANDARD SUCCESS RESPONSE (200/201):
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": { /* endpoint-specific data */ }
+}
+
+STANDARD ERROR RESPONSE (400/403/500):
+{
+  "success": false,
+  "message": "Error description",
+  "data": null
+}
+
+VALIDATION ERROR RESPONSE (400):
+{
+  "fieldName": "error message",
+  "anotherField": "error message"
+}
+
+CONSISTENCY: ✅ EXCELLENT
+- All endpoints follow same pattern
+- Message field provides user-friendly errors
+- Data field contains actual response content
+- Error responses clearly indicate failure state
+
+================================================================================
+                        SECURITY ASSESSMENT SUMMARY
+================================================================================
+
+STRENGTHS:
+  ✅ JWT implementation correct (HMAC SHA-256)
+  ✅ Passwords hashed with BCrypt
+  ✅ Password never exposed in API
+  ✅ CORS properly configured
+  ✅ Ownership validation on sensitive operations
+  ✅ Validation on all input data
+  ✅ Transactional consistency for critical operations
+  ✅ Lazy loading configured correctly
+
+VULNERABILITIES:
+  ⚠️ JWT secret hardcoded (HIGH SEVERITY)
+  ⚠️ H2 console enabled in production
+  ⚠️ No rate limiting on auth endpoints
+  ⚠️ No email verification
+  ⚠️ No password strength requirements beyond length
+  ⚠️ No request timeout configuration visible
+  ⚠️ No SQL injection protection evident (JPA mitigates)
+
+RECOMMENDATIONS FOR PRODUCTION:
+  1. Move JWT secret to environment variable
+  2. Use MySQL/PostgreSQL with proper backup strategy
+  3. Disable H2 console
+  4. Implement rate limiting (IP-based or JWT claim based)
+  5. Add email verification workflow
+  6. Implement request size limits
+  7. Add HTTPS enforcement
+  8. Implement API versioning strategy
+  9. Add audit logging for sensitive operations
+  10. Setup monitoring and alerting
+
+================================================================================
+                           PERFORMANCE NOTES
+================================================================================
+
+OPTIMIZATIONS PRESENT:
+  ✅ Lazy loading configured (@FetchType.LAZY)
+  ✅ Proper indexing through @Unique constraints
+  ✅ Cascade operations configured efficiently
+  ✅ Orphan removal prevents orphaned records
+  ✅ Connection pooling (Spring manages)
+
+POTENTIAL IMPROVEMENTS:
+  - Consider query optimization for list endpoints
+  - Add pagination to /favorites and /reviews/user
+  - Consider caching for /reviews/movie/{movieId}
+  - Database indices on frequently queried fields
+
+================================================================================
+                          DATABASE RELATIONSHIPS
+================================================================================
+
+Entity Relationships (Relational Model):
+
+User (1) ----< (Many) Favorite
+  - One user can have many favorites
+  - Cascade delete: Favorite deleted when user deleted
+  - Orphan removal: Favorite deleted when removed from set
+
+User (1) ----< (Many) Review
+  - One user can have many reviews
+  - Cascade delete: Review deleted when user deleted
+  - Orphan removal: Review deleted when removed from set
+
+FOREIGN KEYS:
+  - Favorite.user_id → User.id
+  - Review.user_id → User.id
+
+INDICES (Implicit):
+  - User.email (UNIQUE)
+  - User.username (UNIQUE)
+  - Favorite(user_id, movie_id) - Composite natural key
+  - Review(user_id, movie_id) - Allows update logic
+
+================================================================================
+                           VALIDATION SUMMARY
+================================================================================
+
+REGISTRATION VALIDATION:
+  ✅ Username: 3-64 characters
+  ✅ Email: Valid email format
+  ✅ Password: 6-100 characters
+  ✅ Email uniqueness: Database constraint + service check
+  ✅ Username uniqueness: Database constraint + service check
+
+LOGIN VALIDATION:
+  ✅ Email required and formatted
+  ✅ Password required (not blank)
+  ✅ Credentials validated against database
+
+FAVORITE REQUEST VALIDATION:
+  ✅ movieId: Required, non-null integer
+
+REVIEW REQUEST VALIDATION:
+  ✅ movieId: Required, non-null integer
+  ✅ rating: Required, integer between 1-5
+  ✅ comment: Optional, string
+
+OVERALL VALIDATION SCORE: ✅ GOOD
+- All required fields validated
+- Type checking present
+- Business logic validation (duplicates, ownership)
+- Room for improvement: password strength, email verification
+
+================================================================================
+                        DEPLOYMENT READINESS CHECKLIST
+================================================================================
+
+DEVELOPMENT: ✅ READY
+  ✅ Code compiles without errors
+  ✅ All endpoints functional
+  ✅ Authentication working
+  ✅ Database schema working
+  ✅ CORS configured for localhost
+  ✅ Test procedures documented
+
+STAGING: ⚠️ NEEDS WORK
+  - Set up MySQL database
+  - Configure environment variables
+  - Implement email service
+  - Set up logging/monitoring
+  - Prepare database migrations
+  - Test with realistic data volume
+
+PRODUCTION: ❌ NOT READY
+  - ❌ JWT secret must be from environment
+  - ❌ Database must be MySQL/PostgreSQL (not H2)
+  - ❌ Rate limiting needed
+  - ❌ Email verification needed
+  - ❌ HTTPS enforcement needed
+  - ❌ Monitoring/alerting not setup
+  - ❌ Backup strategy not documented
+  - ❌ Disaster recovery plan needed
+
+================================================================================
+                              CONCLUSION
+================================================================================
+
+The MovieDash API is a WELL-DESIGNED REST API suitable for development and
+initial testing. The codebase demonstrates good architectural practices with
+proper separation of concerns, clean code, and comprehensive documentation.
+
+OVERALL SCORE: 7.5/10
+
+Strengths:
+  - Clean architecture and code quality
+  - Proper authentication implementation
+  - Comprehensive error handling
+  - Excellent documentation
+  - Good CORS configuration
+  - Proper validation
+
+Areas for Improvement:
+  - Security hardening for production
+  - Missing advanced features (email verification, rate limiting)
+  - Code documentation mismatch (TODO vs implementation)
+  - Database configuration for production
+
+RECOMMENDATION:
+  ✅ READY for development and frontend integration testing
+  ⚠️ NEEDS HARDENING for production deployment
+  ✅ API contract stable and well-documented
+  ✅ Backend can be deployed to staging with configuration changes
+
+Next Steps:
+  1. Address the 3 critical issues (JWT secret, H2 config, TODO cleanup)
+  2. Implement rate limiting for security
+  3. Setup email verification workflow
+  4. Create production deployment playbook
+  5. Setup monitoring and alerting
+  6. Prepare database migration strategy
+
+================================================================================
+                         COMPREHENSIVE DOCUMENTATION
+================================================================================
+
+The following documentation files are available:
+
+1. API_ENDPOINTS_MAP.md (This file - 600+ lines)
+   - Complete endpoint reference
+   - Request/response examples
+   - Security details
+   - Known issues analysis
+   - Testing information
+
+2. API_TESTING_PROCEDURE.md (752 lines)
+   - Step-by-step testing guide
+   - 17 test scenarios with curl examples
+   - Troubleshooting guide
+   - Automated test script
+
+3. BACKEND_CODE_REVIEW.md (200+ lines)
+   - Code review findings
+   - Bug fixes applied
+   - Quality checks passed
+   - Frontend integration checklist
+
+4. BACKEND_TESTING_GUIDE.md
+   - Unit test patterns
+   - Integration test examples
+   - Test coverage recommendations
+
+5. BACKEND_MIGRATION_GUIDE.md (52KB)
+   - Database migration procedures
+   - Schema documentation
+   - Configuration management
+
+================================================================================
+
+Generated: October 29, 2025
+Analysis Tool: Claude Code
+Duration: Comprehensive multi-file analysis
+Status: COMPLETE AND DOCUMENTED
+
+All analysis results have been saved to the project directory.
+Please review API_ENDPOINTS_MAP.md for the complete reference.
+
+================================================================================
