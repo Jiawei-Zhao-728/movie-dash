@@ -2,7 +2,7 @@ package com.moviedash.controller;
 
 import com.moviedash.dto.request.ReviewRequest;
 import com.moviedash.dto.response.ApiResponse;
-import com.moviedash.entity.Review;
+import com.moviedash.dto.response.ReviewResponse;
 import com.moviedash.entity.User;
 import com.moviedash.service.ReviewService;
 import jakarta.validation.Valid;
@@ -26,9 +26,9 @@ public class ReviewController {
      * GET /reviews/movie/{movieId}
      */
     @GetMapping("/movie/{movieId}")
-    public ResponseEntity<ApiResponse<List<Review>>> getMovieReviews(
+    public ResponseEntity<ApiResponse<List<ReviewResponse>>> getMovieReviews(
             @PathVariable Integer movieId) {
-        List<Review> reviews = reviewService.getMovieReviews(movieId);
+        List<ReviewResponse> reviews = reviewService.getMovieReviews(movieId);
         return ResponseEntity.ok(ApiResponse.success(reviews));
     }
 
@@ -37,10 +37,10 @@ public class ReviewController {
      * GET /reviews/user
      */
     @GetMapping("/user")
-    public ResponseEntity<ApiResponse<List<Review>>> getUserReviews(
+    public ResponseEntity<ApiResponse<List<ReviewResponse>>> getUserReviews(
             Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        List<Review> reviews = reviewService.getUserReviews(user.getId());
+        List<ReviewResponse> reviews = reviewService.getUserReviews(user.getId());
         return ResponseEntity.ok(ApiResponse.success(reviews));
     }
 
@@ -49,11 +49,11 @@ public class ReviewController {
      * POST /reviews
      */
     @PostMapping
-    public ResponseEntity<ApiResponse<Review>> createOrUpdateReview(
+    public ResponseEntity<ApiResponse<ReviewResponse>> createOrUpdateReview(
             @Valid @RequestBody ReviewRequest request,
             Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        Review review = reviewService.createOrUpdateReview(
+        ReviewResponse review = reviewService.createOrUpdateReview(
                 user,
                 request.getMovieId(),
                 request.getRating(),

@@ -1,5 +1,6 @@
 package com.moviedash.service;
 
+import com.moviedash.dto.response.ReviewResponse;
 import com.moviedash.entity.Review;
 import com.moviedash.entity.User;
 import com.moviedash.repository.ReviewRepository;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -16,23 +18,42 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
 
     /**
+     * Convert Review entity to ReviewResponse DTO
+     */
+    private ReviewResponse toReviewResponse(Review review) {
+        return new ReviewResponse(
+                review.getId(),
+                review.getMovieId(),
+                review.getRating(),
+                review.getComment(),
+                review.getCreatedAt(),
+                review.getUser().getUsername(),
+                review.getUser().getId()
+        );
+    }
+
+    /**
      * Get all reviews for a specific movie
      *
      * @param movieId the TMDb movie ID
-     * @return list of reviews
+     * @return list of review responses
      */
-    public List<Review> getMovieReviews(Integer movieId) {
-        return reviewRepository.findByMovieId(movieId);
+    public List<ReviewResponse> getMovieReviews(Integer movieId) {
+        return reviewRepository.findByMovieId(movieId).stream()
+                .map(this::toReviewResponse)
+                .collect(Collectors.toList());
     }
 
     /**
      * Get all reviews by a specific user
      *
      * @param userId the user ID
-     * @return list of reviews
+     * @return list of review responses
      */
-    public List<Review> getUserReviews(Long userId) {
-        return reviewRepository.findByUserId(userId);
+    public List<ReviewResponse> getUserReviews(Long userId) {
+        return reviewRepository.findByUserId(userId).stream()
+                .map(this::toReviewResponse)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -43,10 +64,10 @@ public class ReviewService {
      * @param movieId the TMDb movie ID
      * @param rating the rating (1-5)
      * @param comment the review comment
-     * @return the created or updated review
+     * @return the created or updated review response
      */
     @Transactional
-    public Review createOrUpdateReview(User user, Integer movieId, Integer rating, String comment) {
+    public ReviewResponse createOrUpdateReview(User user, Integer movieId, Integer rating, String comment) {
         // Find existing review or create new one
         Review review = reviewRepository
                 .findByUserIdAndMovieId(user.getId(), movieId)
@@ -58,7 +79,8 @@ public class ReviewService {
         review.setRating(rating);
         review.setComment(comment);
 
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+        return toReviewResponse(savedReview);
     }
 
     /**
