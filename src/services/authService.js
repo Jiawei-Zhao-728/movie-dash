@@ -217,4 +217,133 @@ export const authService = {
   removeFromWatchlist: async (movieId) => {
     return authService.removeFromFavorites(movieId);
   },
+
+  // Reviews
+  /**
+   * Get all reviews for a specific movie (public endpoint)
+   * @param {number} movieId - The TMDb movie ID
+   * @returns {Promise<Array>} Array of review objects
+   */
+  getMovieReviews: async (movieId) => {
+    try {
+      const response = await fetch(`${API_URL}/reviews/movie/${movieId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        let errorMsg = "Failed to fetch reviews";
+        try {
+          const result = await response.json();
+          errorMsg = result.message || result.error || errorMsg;
+        } catch (e) {
+          errorMsg = response.statusText || errorMsg;
+        }
+        throw new Error(errorMsg);
+      }
+
+      const result = await response.json();
+      return result.data || [];
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Get all reviews by the authenticated user
+   * @returns {Promise<Array>} Array of review objects
+   */
+  getUserReviews: async () => {
+    try {
+      const response = await fetch(`${API_URL}/reviews/user`, {
+        method: "GET",
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        let errorMsg = "Failed to fetch user reviews";
+        try {
+          const result = await response.json();
+          errorMsg = result.message || result.error || errorMsg;
+        } catch (e) {
+          errorMsg = response.statusText || errorMsg;
+        }
+        throw new Error(errorMsg);
+      }
+
+      const result = await response.json();
+      return result.data || [];
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  /**
+   * Create or update a review
+   * @param {number} movieId - The TMDb movie ID
+   * @param {number} rating - Rating from 1 to 5
+   * @param {string} comment - Optional review comment
+   * @returns {Promise<Object>} The created or updated review
+   */
+  createReview: async (movieId, rating, comment = "") => {
+    try {
+      const response = await fetch(`${API_URL}/reviews`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ movieId, rating, comment }),
+      });
+
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        const statusText = response.statusText || "Unknown error";
+        throw new Error(`Server error (${response.status}): ${statusText}. Response may be incomplete.`);
+      }
+
+      if (!response.ok) {
+        const errorMsg = result.message || result.error || "Failed to create review";
+        throw new Error(errorMsg);
+      }
+
+      return result.data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(error.message || "Failed to create review");
+    }
+  },
+
+  /**
+   * Delete a review
+   * @param {number} reviewId - The review ID to delete
+   * @returns {Promise<void>}
+   */
+  deleteReview: async (reviewId) => {
+    try {
+      const response = await fetch(`${API_URL}/reviews/${reviewId}`, {
+        method: "DELETE",
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        let errorMsg = "Failed to delete review";
+        try {
+          const result = await response.json();
+          errorMsg = result.message || result.error || errorMsg;
+        } catch (e) {
+          errorMsg = response.statusText || errorMsg;
+        }
+        throw new Error(errorMsg);
+      }
+
+      const result = await response.json();
+      return result.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 };

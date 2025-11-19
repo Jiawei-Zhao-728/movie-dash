@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Drawer,
   List,
@@ -19,8 +20,14 @@ import { useAuth } from "../context/AuthContext";
 
 const Sidebar = ({ open, onClose }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) return null;
+
+  const handleFavoritesClick = () => {
+    navigate("/favorites");
+    onClose();
+  };
 
   return (
     <Drawer
@@ -65,7 +72,7 @@ const Sidebar = ({ open, onClose }) => {
       </Box>
 
       <List>
-        <ListItem button>
+        <ListItem button onClick={handleFavoritesClick}>
           <ListItemIcon>
             <FavoriteIcon color="primary" />
           </ListItemIcon>

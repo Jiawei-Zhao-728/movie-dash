@@ -18,12 +18,18 @@ import { motion } from "framer-motion";
 import PersonIcon from "@mui/icons-material/Person";
 import EmailIcon from "@mui/icons-material/Email";
 import MovieIcon from "@mui/icons-material/Movie";
+import RateReviewIcon from "@mui/icons-material/RateReview";
 import { authService } from "../services/authService";
+import ReviewList from "../components/ReviewList";
+import ModernMovieCard from "../components/ModernMovieCard";
+import tmdbApi from "../services/tmdbApi";
 
 const Profile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [favorites, setFavorites] = useState([]);
+  const [favoriteMovies, setFavoriteMovies] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -35,8 +41,31 @@ const Profile = () => {
 
     const fetchUserData = async () => {
       try {
-        const favoritesData = await authService.getFavorites();
+        const [favoritesData, reviewsData] = await Promise.all([
+          authService.getFavorites(),
+          authService.getUserReviews(),
+        ]);
         setFavorites(favoritesData);
+        setReviews(reviewsData);
+
+        // Fetch movie details for favorites
+        if (favoritesData && favoritesData.length > 0) {
+          const moviePromises = favoritesData.map(async (favorite) => {
+            try {
+              const response = await tmdbApi.get(`/movie/${favorite.movieId}`);
+              return response.data;
+            } catch (err) {
+              console.error(`Error fetching movie ${favorite.movieId}:`, err);
+              return null;
+            }
+          });
+
+          const movies = await Promise.all(moviePromises);
+          const validMovies = movies.filter((movie) => movie !== null);
+          setFavoriteMovies(validMovies);
+        } else {
+          setFavoriteMovies([]);
+        }
       } catch (err) {
         console.error("Error fetching user data:", err);
         setError("Failed to load user data");
@@ -185,14 +214,122 @@ const Profile = () => {
                       borderRadius: 2,
                     }}
                   >
-                    <MovieIcon sx={{ fontSize: 48, mb: 1 }} />
+                    <RateReviewIcon sx={{ fontSize: 48, mb: 1 }} />
                     <Typography variant="h3" fontWeight={700}>
-                      0
+                      {reviews.length}
                     </Typography>
                     <Typography variant="body2">Reviews Written</Typography>
                   </Box>
                 </Grid>
               </Grid>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* My Favorites Section */}
+        <Card elevation={3} sx={{ borderRadius: 3, mb: 4 }}>
+          <CardContent sx={{ p: 4 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+              <Typography variant="h6" fontWeight={600}>
+                My Favorite Movies
+              </Typography>
+              {favoriteMovies.length > 0 && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => navigate("/favorites")}
+                  sx={{ textTransform: "none" }}
+                >
+                  View All
+                </Button>
+              )}
+            </Box>
+            <Divider sx={{ my: 2 }} />
+
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : error ? (
+              <Alert severity="error">{error}</Alert>
+            ) : favoriteMovies.length === 0 ? (
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <MovieIcon sx={{ fontSize: 64, color: "text.secondary", mb: 2 }} />
+                <Typography variant="body1" color="text.secondary" gutterBottom>
+                  You haven't added any favorite movies yet.
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate("/")}
+                  sx={{ mt: 2 }}
+                >
+                  Browse Movies
+                </Button>
+              </Box>
+            ) : (
+              <Grid container spacing={2}>
+                {favoriteMovies.slice(0, 4).map((movie) => (
+                  <Grid item xs={6} sm={4} md={3} key={movie.id}>
+                    <ModernMovieCard movie={movie} />
+                  </Grid>
+                ))}
+                {favoriteMovies.length > 4 && (
+                  <Grid item xs={12}>
+                    <Box sx={{ textAlign: "center", mt: 2 }}>
+                      <Button
+                        variant="outlined"
+                        onClick={() => navigate("/favorites")}
+                        sx={{ textTransform: "none" }}
+                      >
+                        View All {favoriteMovies.length} Favorites
+                      </Button>
+                    </Box>
+                  </Grid>
+                )}
+              </Grid>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* My Reviews Section */}
+        <Card elevation={3} sx={{ borderRadius: 3, mb: 4 }}>
+          <CardContent sx={{ p: 4 }}>
+            <Typography variant="h6" fontWeight={600} gutterBottom>
+              My Reviews
+            </Typography>
+            <Divider sx={{ my: 2 }} />
+
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : error ? (
+              <Alert severity="error">{error}</Alert>
+            ) : reviews.length === 0 ? (
+              <Box sx={{ textAlign: "center", py: 4 }}>
+                <Typography variant="body1" color="text.secondary" gutterBottom>
+                  You haven't written any reviews yet.
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate("/")}
+                  sx={{ mt: 2 }}
+                >
+                  Browse Movies
+                </Button>
+              </Box>
+            ) : (
+              <ReviewList
+                reviews={reviews}
+                onReviewDeleted={async () => {
+                  try {
+                    const reviewsData = await authService.getUserReviews();
+                    setReviews(reviewsData);
+                  } catch (err) {
+                    console.error("Error refreshing reviews:", err);
+                  }
+                }}
+              />
             )}
           </CardContent>
         </Card>

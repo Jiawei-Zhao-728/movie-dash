@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getMovieDetails } from "../services/tmdbApi";
@@ -13,13 +13,43 @@ import {
   IconButton,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ReviewForm from "../components/ReviewForm";
+import ReviewList from "../components/ReviewList";
+import { authService } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
 
 const MovieDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [userReview, setUserReview] = useState(null);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
+  const fetchReviews = useCallback(async () => {
+    if (!id) return;
+    
+    setReviewsLoading(true);
+    try {
+      const reviewsData = await authService.getMovieReviews(parseInt(id));
+      setReviews(reviewsData);
+      
+      // Find user's review if logged in
+      if (user) {
+        const myReview = reviewsData.find((r) => r.userId === user.id);
+        setUserReview(myReview || null);
+      } else {
+        setUserReview(null);
+      }
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [id, user]);
 
   useEffect(() => {
     const fetchMovieDetails = async () => {
@@ -35,7 +65,8 @@ const MovieDetail = () => {
     };
 
     fetchMovieDetails();
-  }, [id]);
+    fetchReviews();
+  }, [id, fetchReviews]);
 
   if (loading) return <CircularProgress />;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -126,6 +157,35 @@ const MovieDetail = () => {
             </motion.div>
           </Grid>
         </Grid>
+
+        {/* Reviews Section */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.6 }}
+        >
+          <Box sx={{ mt: 6 }}>
+            <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
+              Reviews
+            </Typography>
+            
+            {/* Review Form */}
+            <ReviewForm
+              movieId={parseInt(id)}
+              existingReview={userReview}
+              onReviewSubmitted={fetchReviews}
+            />
+
+            {/* Review List */}
+            {reviewsLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <ReviewList reviews={reviews} onReviewDeleted={fetchReviews} />
+            )}
+          </Box>
+        </motion.div>
       </Container>
     </motion.div>
   );

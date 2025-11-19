@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,12 +20,42 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { getMovieDetails, getTVShowDetails } from "../services/tmdbApi";
+import { authService } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
+import ReviewForm from "./ReviewForm";
+import ReviewList from "./ReviewList";
 
 const DetailModal = ({ open, onClose, mediaId, mediaType }) => {
+  const { user } = useAuth();
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
   const [selectedTrailer, setSelectedTrailer] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [userReview, setUserReview] = useState(null);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
+  const fetchReviews = useCallback(async () => {
+    if (!mediaId || mediaType !== "movie") return;
+    
+    setReviewsLoading(true);
+    try {
+      const reviewsData = await authService.getMovieReviews(parseInt(mediaId));
+      setReviews(reviewsData);
+      
+      // Find user's review if logged in
+      if (user) {
+        const myReview = reviewsData.find((r) => r.userId === user.id);
+        setUserReview(myReview || null);
+      } else {
+        setUserReview(null);
+      }
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [mediaId, mediaType, user]);
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -39,9 +69,11 @@ const DetailModal = ({ open, onClose, mediaId, mediaType }) => {
         setDetails(data);
 
         // Set first trailer as default if available
-        const trailer =
-          data.videos.find((v) => v.type === "Trailer") || data.videos[0];
-        setSelectedTrailer(trailer);
+        if (data.videos && Array.isArray(data.videos) && data.videos.length > 0) {
+          const trailer =
+            data.videos.find((v) => v.type === "Trailer") || data.videos[0];
+          setSelectedTrailer(trailer);
+        }
       } catch (error) {
         console.error("Error fetching details:", error);
       } finally {
@@ -51,8 +83,11 @@ const DetailModal = ({ open, onClose, mediaId, mediaType }) => {
 
     if (open) {
       fetchDetails();
+      if (mediaType === "movie") {
+        fetchReviews();
+      }
     }
-  }, [mediaId, mediaType, open]);
+  }, [mediaId, mediaType, open, fetchReviews]);
 
   if (!open || loading || !details) return null;
 
@@ -140,23 +175,58 @@ const DetailModal = ({ open, onClose, mediaId, mediaType }) => {
         </Box>
       )}
       <Grid container spacing={2}>
-        {details.videos.map((video) => (
-          <Grid item xs={12} sm={6} md={4} key={video.id}>
-            <Button
-              variant={
-                selectedTrailer?.id === video.id ? "contained" : "outlined"
-              }
-              startIcon={<PlayArrowIcon />}
-              onClick={() => setSelectedTrailer(video)}
-              fullWidth
-            >
-              {video.name}
-            </Button>
+        {details.videos && Array.isArray(details.videos) && details.videos.length > 0 ? (
+          details.videos.map((video) => (
+            <Grid item xs={12} sm={6} md={4} key={video.id}>
+              <Button
+                variant={
+                  selectedTrailer?.id === video.id ? "contained" : "outlined"
+                }
+                startIcon={<PlayArrowIcon />}
+                onClick={() => setSelectedTrailer(video)}
+                fullWidth
+              >
+                {video.name}
+              </Button>
+            </Grid>
+          ))
+        ) : (
+          <Grid item xs={12}>
+            <Typography color="text.secondary">No videos available</Typography>
           </Grid>
-        ))}
+        )}
       </Grid>
     </Box>
   );
+
+  const renderReviews = () => {
+    if (mediaType !== "movie") {
+      return (
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <Typography variant="body1" color="text.secondary">
+            Reviews are only available for movies.
+          </Typography>
+        </Box>
+      );
+    }
+
+    return (
+      <Box>
+        <ReviewForm
+          movieId={parseInt(mediaId)}
+          existingReview={userReview}
+          onReviewSubmitted={fetchReviews}
+        />
+        {reviewsLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <Typography>Loading reviews...</Typography>
+          </Box>
+        ) : (
+          <ReviewList reviews={reviews} onReviewDeleted={fetchReviews} />
+        )}
+      </Box>
+    );
+  };
 
   return (
     <Dialog
@@ -224,11 +294,13 @@ const DetailModal = ({ open, onClose, mediaId, mediaType }) => {
           <Tab label="Overview" />
           <Tab label="Cast" />
           <Tab label="Videos" />
+          {mediaType === "movie" && <Tab label="Reviews" />}
         </Tabs>
 
         {activeTab === 0 && renderOverview()}
         {activeTab === 1 && renderCast()}
         {activeTab === 2 && renderVideos()}
+        {activeTab === 3 && mediaType === "movie" && renderReviews()}
       </DialogContent>
     </Dialog>
   );
