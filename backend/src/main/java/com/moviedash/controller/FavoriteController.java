@@ -7,12 +7,40 @@ import com.moviedash.entity.User;
 import com.moviedash.service.FavoriteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * FavoriteController
+ *
+ * REST controller for managing user's favorite movies/TV shows.
+ * Provides CRUD operations for the favorites/watchlist feature.
+ *
+ * Base Path: /favorites
+ *
+ * Business Logic:
+ * - Users can add movies to their favorites (watchlist)
+ * - Users can remove movies from their favorites
+ * - Users can view all their favorited movies
+ * - Users can check if a specific movie is in their favorites
+ *
+ * Authentication:
+ * - All endpoints require authentication via JWT token
+ * - User information extracted from Authentication object
+ *
+ * Data Model:
+ * - Each favorite links a User to a TMDB movie ID
+ * - Stores timestamp of when favorite was added
+ * - Prevents duplicate favorites per user
+ *
+ * @see FavoriteService for business logic
+ * @see Favorite entity for data model
+ */
+@Slf4j
 @RestController
 @RequestMapping("/favorites")
 @RequiredArgsConstructor
@@ -30,11 +58,13 @@ public class FavoriteController {
             Authentication authentication) {
         try {
             User user = (User) authentication.getPrincipal();
+            log.debug("Fetching favorites for user: {}", user.getEmail());
             List<Favorite> favorites = favoriteService.getUserFavorites(user.getId());
+            log.info("Successfully retrieved {} favorites for user: {}", favorites.size(), user.getEmail());
             return ResponseEntity.ok(ApiResponse.success(favorites));
         } catch (Exception e) {
-            System.err.println("Error getting favorites: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error getting favorites for user: {}",
+                    authentication != null ? ((User) authentication.getPrincipal()).getEmail() : "unknown", e);
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to fetch favorites: " + e.getMessage()));
         }
@@ -50,17 +80,18 @@ public class FavoriteController {
             Authentication authentication) {
         try {
             User user = (User) authentication.getPrincipal();
+            log.debug("Adding movie {} to favorites for user: {}", request.getMovieId(), user.getEmail());
             Favorite favorite = favoriteService.addFavorite(user, request.getMovieId());
-            
+
             // Create a response with the favorite, ensuring serialization works
             try {
+                log.info("Successfully added movie {} to favorites for user: {}", request.getMovieId(), user.getEmail());
                 return ResponseEntity.ok(
                         ApiResponse.success("Added to favorites", favorite)
                 );
             } catch (Exception e) {
                 // If serialization fails, return a simpler response
-                System.err.println("Error serializing favorite: " + e.getMessage());
-                e.printStackTrace();
+                log.warn("Error serializing favorite for user: {}, falling back to simple response", user.getEmail(), e);
                 // Return just the movieId and id to avoid serialization issues
                 Favorite simpleFavorite = new Favorite();
                 simpleFavorite.setId(favorite.getId());
@@ -71,11 +102,11 @@ public class FavoriteController {
                 );
             }
         } catch (IllegalArgumentException e) {
+            log.warn("Invalid request to add favorite: {}", e.getMessage());
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
-            System.err.println("Unexpected error in addFavorite: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Unexpected error in addFavorite for movieId: {}", request.getMovieId(), e);
             return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Failed to add favorite: " + e.getMessage()));
         }

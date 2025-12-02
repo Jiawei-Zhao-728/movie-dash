@@ -74,6 +74,66 @@ export const getTrendingMovies = async (page = 1) => {
   }
 };
 
+export const getTrendingAll = async (page = 1) => {
+  try {
+    const response = await tmdbApi.get("/trending/all/week", {
+      params: { page }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching trending content:", error);
+    throw error;
+  }
+};
+
+export const getPopularMovies = async (page = 1) => {
+  try {
+    const response = await tmdbApi.get("/movie/popular", {
+      params: { page }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching popular movies:", error);
+    throw error;
+  }
+};
+
+export const getTopRatedMovies = async (page = 1) => {
+  try {
+    const response = await tmdbApi.get("/movie/top_rated", {
+      params: { page }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching top rated movies:", error);
+    throw error;
+  }
+};
+
+export const getUpcomingMovies = async (page = 1) => {
+  try {
+    const response = await tmdbApi.get("/movie/upcoming", {
+      params: { page }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching upcoming movies:", error);
+    throw error;
+  }
+};
+
+export const getNowPlayingMovies = async (page = 1) => {
+  try {
+    const response = await tmdbApi.get("/movie/now_playing", {
+      params: { page }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching now playing movies:", error);
+    throw error;
+  }
+};
+
 export const getMovieDetails = async (movieId) => {
   try {
     const [details, credits, videos] = await Promise.all([
@@ -108,6 +168,16 @@ export const getTVShowDetails = async (tvId) => {
     };
   } catch (error) {
     console.error("Error fetching TV show details:", error);
+    throw error;
+  }
+};
+
+export const getMovieRecommendations = async (movieId) => {
+  try {
+    const response = await tmdbApi.get(`/movie/${movieId}/recommendations`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching movie recommendations:", error);
     throw error;
   }
 };

@@ -1,362 +1,395 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  TextField,
-  InputAdornment,
+  InputBase,
   IconButton,
-  Paper,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Popper,
-  List,
-  ListItem,
-  ListItemText,
-  ClickAwayListener,
   Chip,
-  CircularProgress,
-  Button,
-  OutlinedInput,
+  Tooltip,
+  Fade,
+  ClickAwayListener,
 } from "@mui/material";
-import { motion, AnimatePresence } from "framer-motion";
 import SearchIcon from "@mui/icons-material/Search";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import MovieIcon from "@mui/icons-material/Movie";
+import CloseIcon from "@mui/icons-material/Close";
+import MovieFilterIcon from "@mui/icons-material/MovieFilter";
 import TvIcon from "@mui/icons-material/Tv";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { searchMulti, getGenres } from "../services/tmdbApi";
+import AllInclusiveIcon from "@mui/icons-material/AllInclusive";
+import { searchMulti } from "../services/tmdbApi";
 import { debounce } from "lodash";
+import { tokens } from "../theme";
 
-const SearchBar = ({ onSearch, onBack }) => {
+/**
+ * SearchBar Component
+ *
+ * A minimal, pill-shaped search bar with glass morphism design and auto-suggestions.
+ * Provides real-time search with debouncing and media type filtering.
+ *
+ * Features:
+ * - Auto-complete suggestions with poster thumbnails
+ * - Media type filters (All, Movies, TV)
+ * - Debounced search (300ms) to reduce API calls
+ * - Glass morphism design with backdrop blur
+ * - Click-away listener to close suggestions
+ * - Clear button when input has content
+ *
+ * @param {Object} props - Component props
+ * @param {Function} [props.onSearch] - Callback when search is submitted (query, mediaType)
+ * @param {Function} [props.onBack] - Callback when search is cleared
+ *
+ * @example
+ * <SearchBar
+ *   onSearch={(query, mediaType) => console.log(query, mediaType)}
+ *   onBack={() => console.log('Search cleared')}
+ * />
+ */
+const SearchBar = ({ onSearch, onBack } = {}) => {
+  // Local state for search input and filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [mediaType, setMediaType] = useState("movie");
-  const [showFilters, setShowFilters] = useState(false);
+  const [mediaType, setMediaType] = useState("all");
   const [suggestions, setSuggestions] = useState([]);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [genres, setGenres] = useState([]);
-  const [selectedGenres, setSelectedGenres] = useState([]);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
+  /**
+   * Fetch search suggestions from TMDB API with debouncing
+   * Debounced to 300ms to prevent excessive API calls while typing
+   * Only fetches if query is 2+ characters
+   * Limits results to top 5 suggestions
+   */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchSuggestions = debounce(async (query) => {
+    // Minimum query length to trigger search
     if (query.length < 2) {
       setSuggestions([]);
+      setShowSuggestions(false);
       return;
     }
 
-    setIsLoading(true);
     try {
       const data = await searchMulti(query);
+      // Limit to top 5 results for cleaner UI
       setSuggestions(data.results.slice(0, 5));
+      setShowSuggestions(true);
     } catch (error) {
       console.error("Error fetching suggestions:", error);
-    } finally {
-      setIsLoading(false);
     }
-  }, 300);
+  }, 300); // 300ms debounce delay
 
   useEffect(() => {
     if (searchQuery) {
       fetchSuggestions(searchQuery);
     } else {
       setSuggestions([]);
+      setShowSuggestions(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
-
-  useEffect(() => {
-    const fetchGenres = async () => {
-      try {
-        const genreData = await getGenres();
-        setGenres(genreData);
-      } catch (error) {
-        console.error("Error fetching genres:", error);
-      }
-    };
-    fetchGenres();
-  }, []);
 
   const handleSearch = (e) => {
     e?.preventDefault();
     if (searchQuery.trim()) {
-      onSearch(searchQuery, mediaType, {
-        genres: selectedGenres.map((genre) => genre.id),
-        startDate,
-        endDate,
-      });
-      setSuggestions([]);
+      if (onSearch) {
+        onSearch(searchQuery, mediaType);
+      }
+      setShowSuggestions(false);
     }
   };
 
   const handleSuggestionClick = (suggestion) => {
-    setSearchQuery(suggestion.title || suggestion.name);
-    setSuggestions([]);
-    onSearch(suggestion.title || suggestion.name, suggestion.media_type);
+    const title = suggestion.title || suggestion.name;
+    setSearchQuery(title);
+    setShowSuggestions(false);
+    if (onSearch) {
+      onSearch(title, suggestion.media_type || "all");
+    }
   };
 
+  const handleClear = () => {
+    setSearchQuery("");
+    setSuggestions([]);
+    setShowSuggestions(false);
+    if (onBack) {
+      onBack();
+    }
+  };
+
+  const mediaTypes = [
+    { value: "all", label: "All", icon: <AllInclusiveIcon sx={{ fontSize: 16 }} /> },
+    { value: "movie", label: "Movies", icon: <MovieFilterIcon sx={{ fontSize: 16 }} /> },
+    { value: "tv", label: "TV", icon: <TvIcon sx={{ fontSize: 16 }} /> },
+  ];
+
   return (
-    <Box
-      sx={{
-        position: "relative",
-        width: "100%",
-        maxWidth: "800px",
-        mx: "auto",
-      }}
-    >
-      <Paper
-        component={motion.form}
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        elevation={3}
-        onSubmit={handleSearch}
+    <ClickAwayListener onClickAway={() => setShowSuggestions(false)}>
+      <Box
         sx={{
-          p: 2,
-          mb: 4,
-          borderRadius: 8,
-          backgroundColor: "background.paper",
-          transition: "box-shadow 0.3s ease",
-          "&:hover": {
-            boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-          },
+          position: "relative",
+          width: "100%",
+          maxWidth: "700px",
+          mx: "auto",
         }}
       >
+        {/* Main Search Container - Minimal Glass Design */}
         <Box
+          component="form"
+          onSubmit={handleSearch}
           sx={{
             display: "flex",
-            gap: 2,
-            flexWrap: "wrap",
             alignItems: "center",
+            gap: 1.5,
+            px: 2.5,
+            py: 1.2,
+            borderRadius: tokens.borderRadius.full,
+            background: "rgba(30, 30, 30, 0.6)",
+            backdropFilter: `blur(${tokens.blur.md})`,
+            WebkitBackdropFilter: `blur(${tokens.blur.md})`,
+            border: `1px solid ${tokens.colors.dark[600]}`,
+            transition: tokens.transitions.all,
+            "&:hover": {
+              background: "rgba(35, 35, 35, 0.7)",
+              borderColor: tokens.colors.dark[500],
+            },
+            "&:focus-within": {
+              background: "rgba(40, 40, 40, 0.8)",
+              borderColor: tokens.colors.brand.primary,
+              boxShadow: `0 0 0 3px ${tokens.colors.brand.primary}20`,
+            },
           }}
         >
-          <IconButton
-            onClick={onBack}
+          {/* Search Icon */}
+          <SearchIcon
             sx={{
-              color: "text.secondary",
-              "&:hover": {
-                backgroundColor: "action.hover",
-              },
-            }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Search for movies or TV shows..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setAnchorEl(e.currentTarget);
-            }}
-            sx={{
-              flex: 1,
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 8,
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  backgroundColor: "rgba(0, 0, 0, 0.01)",
-                },
-                "&.Mui-focused": {
-                  boxShadow: "0 0 0 2px rgba(25, 118, 210, 0.2)",
-                },
-              },
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  {isLoading ? (
-                    <CircularProgress size={20} />
-                  ) : (
-                    <IconButton
-                      onClick={() => setShowFilters(!showFilters)}
-                      color={showFilters ? "primary" : "default"}
-                      sx={{
-                        transition: "transform 0.3s ease",
-                        transform: showFilters ? "rotate(180deg)" : "rotate(0)",
-                      }}
-                    >
-                      <FilterListIcon />
-                    </IconButton>
-                  )}
-                </InputAdornment>
-              ),
+              color: tokens.colors.light[500],
+              fontSize: 20,
             }}
           />
 
-          <Button
-            variant="contained"
-            onClick={handleSearch}
+          {/* Input Field - Clean & Minimal */}
+          <InputBase
+            placeholder="Search movies and TV shows..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => {
+              if (suggestions.length > 0) setShowSuggestions(true);
+            }}
             sx={{
-              borderRadius: "28px",
-              padding: "8px 32px",
-              height: 56,
-              textTransform: "none",
-              fontSize: "1rem",
-              backgroundColor: "primary.main",
-              color: "white",
-              boxShadow: "0 3px 5px 2px rgba(25, 118, 210, 0.15)",
-              transition: "all 0.3s ease",
-              "&:hover": {
-                backgroundColor: "primary.dark",
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 8px 2px rgba(25, 118, 210, 0.2)",
+              flex: 1,
+              color: tokens.colors.light[100],
+              fontSize: tokens.typography.fontSize.sm,
+              fontWeight: tokens.typography.fontWeight.medium,
+              "& ::placeholder": {
+                color: tokens.colors.light[600],
+                opacity: 1,
               },
             }}
-          >
-            Search
-          </Button>
+          />
 
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                style={{ width: "100%" }}
-              >
-                <Box sx={{ display: "flex", gap: 2, mt: 2, flexWrap: "wrap" }}>
-                  <FormControl sx={{ minWidth: 120 }}>
-                    <InputLabel>Type</InputLabel>
-                    <Select
-                      value={mediaType}
-                      onChange={(e) => setMediaType(e.target.value)}
-                      label="Type"
-                      sx={{ borderRadius: 4 }}
-                    >
-                      <MenuItem value="movie">Movies</MenuItem>
-                      <MenuItem value="tv">TV Shows</MenuItem>
-                      <MenuItem value="all">All</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <FormControl sx={{ minWidth: 200 }}>
-                    <InputLabel>Genres</InputLabel>
-                    <Select
-                      multiple
-                      value={selectedGenres}
-                      onChange={(e) => setSelectedGenres(e.target.value)}
-                      input={<OutlinedInput label="Genres" />}
-                      renderValue={(selected) => (
-                        <Box
-                          sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}
-                        >
-                          {selected.map((genre) => (
-                            <Chip
-                              key={genre.id}
-                              label={genre.name}
-                              size="small"
-                            />
-                          ))}
-                        </Box>
-                      )}
-                    >
-                      {genres.map((genre) => (
-                        <MenuItem key={genre.id} value={genre}>
-                          {genre.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <TextField
-                    label="Start Date"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    sx={{ minWidth: 200 }}
-                  />
-
-                  <TextField
-                    label="End Date"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    sx={{ minWidth: 200 }}
-                  />
-                </Box>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Box>
-      </Paper>
-
-      <Popper
-        open={Boolean(suggestions.length)}
-        anchorEl={anchorEl}
-        placement="bottom-start"
-        style={{ width: anchorEl?.clientWidth, zIndex: 1300 }}
-      >
-        <ClickAwayListener onClickAway={() => setSuggestions([])}>
-          <Paper
-            elevation={3}
-            sx={{
-              mt: 1,
-              borderRadius: 4,
-              overflow: "hidden",
-              backgroundColor: "background.paper",
-            }}
-          >
-            <List sx={{ p: 0 }}>
-              {suggestions.map((suggestion) => (
-                <ListItem
-                  key={suggestion.id}
-                  button
-                  onClick={() => handleSuggestionClick(suggestion)}
+          {/* Media Type Filter Chips - Minimal Design */}
+          <Box sx={{ display: "flex", gap: 0.5 }}>
+            {mediaTypes.map((type) => (
+              <Tooltip key={type.value} title={type.label} placement="bottom">
+                <Chip
+                  icon={type.icon}
+                  label={type.label}
+                  size="small"
+                  onClick={() => setMediaType(type.value)}
                   sx={{
-                    transition: "background-color 0.2s ease",
+                    height: 28,
+                    fontSize: tokens.typography.fontSize.xs,
+                    fontWeight: tokens.typography.fontWeight.semibold,
+                    backgroundColor:
+                      mediaType === type.value
+                        ? tokens.colors.brand.primary
+                        : "rgba(255, 255, 255, 0.08)",
+                    color:
+                      mediaType === type.value
+                        ? tokens.colors.light[50]
+                        : tokens.colors.light[400],
+                    border:
+                      mediaType === type.value
+                        ? `1px solid ${tokens.colors.brand.primary}`
+                        : "1px solid rgba(255, 255, 255, 0.1)",
+                    transition: tokens.transitions.all,
+                    cursor: "pointer",
+                    "& .MuiChip-icon": {
+                      color: "inherit",
+                      ml: 0.5,
+                    },
+                    "& .MuiChip-label": {
+                      px: 1,
+                    },
                     "&:hover": {
-                      backgroundColor: "action.hover",
+                      backgroundColor:
+                        mediaType === type.value
+                          ? tokens.colors.brand.primaryDark
+                          : "rgba(255, 255, 255, 0.12)",
+                      transform: "translateY(-1px)",
                     },
                   }}
-                >
-                  <ListItemText
-                    primary={suggestion.title || suggestion.name}
-                    secondary={
+                />
+              </Tooltip>
+            ))}
+          </Box>
+
+          {/* Clear Button */}
+          {searchQuery && (
+            <IconButton
+              onClick={handleClear}
+              size="small"
+              sx={{
+                color: tokens.colors.light[500],
+                width: 28,
+                height: 28,
+                transition: tokens.transitions.all,
+                "&:hover": {
+                  color: tokens.colors.light[300],
+                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                },
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          )}
+        </Box>
+
+        {/* Suggestions Dropdown - Minimal Glass Design */}
+        {showSuggestions && suggestions.length > 0 && (
+          <Fade in={showSuggestions}>
+            <Box
+              sx={{
+                position: "absolute",
+                top: "calc(100% + 8px)",
+                left: 0,
+                right: 0,
+                background: "rgba(30, 30, 30, 0.95)",
+                backdropFilter: `blur(${tokens.blur.lg})`,
+                WebkitBackdropFilter: `blur(${tokens.blur.lg})`,
+                borderRadius: tokens.borderRadius.xl,
+                border: `1px solid ${tokens.colors.dark[600]}`,
+                boxShadow: tokens.shadows.xl,
+                overflow: "hidden",
+                zIndex: 1500,
+              }}
+            >
+              {suggestions.map((suggestion, index) => {
+                const title = suggestion.title || suggestion.name;
+                const year = suggestion.release_date
+                  ? new Date(suggestion.release_date).getFullYear()
+                  : suggestion.first_air_date
+                  ? new Date(suggestion.first_air_date).getFullYear()
+                  : "";
+                const type = suggestion.media_type === "tv" ? "Series" : "Film";
+
+                return (
+                  <Box
+                    key={suggestion.id}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      px: 3,
+                      py: 2,
+                      cursor: "pointer",
+                      transition: tokens.transitions.all,
+                      borderBottom:
+                        index < suggestions.length - 1
+                          ? `1px solid ${tokens.colors.dark[700]}`
+                          : "none",
+                      "&:hover": {
+                        backgroundColor: "rgba(99, 102, 241, 0.15)",
+                      },
+                    }}
+                  >
+                    {/* Poster Thumbnail */}
+                    {suggestion.poster_path ? (
+                      <Box
+                        component="img"
+                        src={`https://image.tmdb.org/t/p/w92${suggestion.poster_path}`}
+                        alt={title}
+                        sx={{
+                          width: 32,
+                          height: 48,
+                          objectFit: "cover",
+                          borderRadius: tokens.borderRadius.sm,
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
                       <Box
                         sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1,
-                          mt: 0.5,
+                          width: 32,
+                          height: 48,
+                          borderRadius: tokens.borderRadius.sm,
+                          backgroundColor: tokens.colors.dark[700],
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+
+                    {/* Title & Metadata */}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Box
+                        sx={{
+                          color: tokens.colors.light[100],
+                          fontSize: tokens.typography.fontSize.sm,
+                          fontWeight: tokens.typography.fontWeight.medium,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          mb: 0.5,
                         }}
                       >
-                        {suggestion.media_type === "movie" ? (
-                          <MovieIcon fontSize="small" />
-                        ) : (
-                          <TvIcon fontSize="small" />
-                        )}
+                        {title}
+                      </Box>
+                      <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                         <Chip
-                          label={suggestion.media_type.toUpperCase()}
+                          label={type}
                           size="small"
-                          variant="outlined"
+                          sx={{
+                            height: 18,
+                            fontSize: tokens.typography.fontSize.xs,
+                            fontWeight: tokens.typography.fontWeight.semibold,
+                            backgroundColor: `${tokens.colors.brand.secondary}20`,
+                            color: tokens.colors.brand.secondaryLight,
+                            border: `1px solid ${tokens.colors.brand.secondary}40`,
+                            "& .MuiChip-label": {
+                              px: 1,
+                            },
+                          }}
                         />
-                        {suggestion.release_date && (
-                          <Chip
-                            label={suggestion.release_date.split("-")[0]}
-                            size="small"
-                            variant="outlined"
-                          />
+                        {year && (
+                          <Box
+                            sx={{
+                              color: tokens.colors.light[500],
+                              fontSize: tokens.typography.fontSize.xs,
+                            }}
+                          >
+                            {year}
+                          </Box>
+                        )}
+                        {suggestion.vote_average > 0 && (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.3,
+                              color: tokens.colors.accent,
+                              fontSize: tokens.typography.fontSize.xs,
+                              fontWeight: tokens.typography.fontWeight.semibold,
+                            }}
+                          >
+                            ★ {suggestion.vote_average.toFixed(1)}
+                          </Box>
                         )}
                       </Box>
-                    }
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </Paper>
-        </ClickAwayListener>
-      </Popper>
-    </Box>
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Fade>
+        )}
+      </Box>
+    </ClickAwayListener>
   );
 };
 

@@ -11,6 +11,7 @@ import {
   Divider,
 } from "@mui/material";
 import {
+  Dashboard as DashboardIcon,
   Favorite as FavoriteIcon,
   History as HistoryIcon,
   Bookmark as BookmarkIcon,
@@ -24,8 +25,8 @@ const Sidebar = ({ open, onClose }) => {
 
   if (!user) return null;
 
-  const handleFavoritesClick = () => {
-    navigate("/favorites");
+  const handleNavigation = (path) => {
+    navigate(path);
     onClose();
   };
 
@@ -51,18 +52,8 @@ const Sidebar = ({ open, onClose }) => {
             mb: 3,
           }}
         >
-          <Box
-            component="img"
-            src={user.picture}
-            alt={user.name}
-            sx={{
-              width: 50,
-              height: 50,
-              borderRadius: "50%",
-            }}
-          />
           <Box>
-            <Typography variant="h6">{user.name}</Typography>
+            <Typography variant="h6">{user.username || user.name}</Typography>
             <Typography variant="body2" color="text.secondary">
               {user.email}
             </Typography>
@@ -72,7 +63,13 @@ const Sidebar = ({ open, onClose }) => {
       </Box>
 
       <List>
-        <ListItem button onClick={handleFavoritesClick}>
+        <ListItem button onClick={() => handleNavigation("/dashboard")}>
+          <ListItemIcon>
+            <DashboardIcon color="primary" />
+          </ListItemIcon>
+          <ListItemText primary="Dashboard" />
+        </ListItem>
+        <ListItem button onClick={() => handleNavigation("/favorites")}>
           <ListItemIcon>
             <FavoriteIcon color="primary" />
           </ListItemIcon>
@@ -90,7 +87,7 @@ const Sidebar = ({ open, onClose }) => {
           </ListItemIcon>
           <ListItemText primary="Watchlist" />
         </ListItem>
-        <ListItem button>
+        <ListItem button onClick={() => handleNavigation("/profile")}>
           <ListItemIcon>
             <SettingsIcon color="primary" />
           </ListItemIcon>

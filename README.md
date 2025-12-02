@@ -2,40 +2,103 @@
 
 A modern, full-stack web application for discovering, browsing, and managing your favorite movies and TV shows. Built with React and Spring Boot, powered by The Movie Database (TMDb) API.
 
-![MovieDash](https://img.shields.io/badge/React-18.2.0-blue) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-green) ![Java](https://img.shields.io/badge/Java-17-orange)
+Designed with a **minimal tech aesthetic**, featuring smooth animations, glass morphism effects, and an industry-standard architecture suitable for portfolio and production use.
+
+![MovieDash](https://img.shields.io/badge/React-18.2.0-blue) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.0-green) ![Java](https://img.shields.io/badge/Java-17-orange) ![Material--UI](https://img.shields.io/badge/Material--UI-5.x-purple) ![JWT](https://img.shields.io/badge/JWT-Auth-red)
 
 ## ✨ Features
 
+### 🌟 Standout Features (Resume Highlights)
+
+#### 1. **Personalized Analytics Dashboard** 📊
+   - **What it does**: Intelligent dashboard that analyzes your watching habits and provides personalized recommendations
+   - **Why it's impressive**:
+     - Real-time data aggregation from multiple sources
+     - Visual genre preference analysis with animated charts
+     - Calculates statistics (total watch time, average ratings)
+     - **Smart recommendation algorithm** based on your top-rated favorites
+     - Demonstrates: Async data handling, data visualization, complex state management
+   - **Technical skills showcased**:
+     - Promise.all coordination for parallel API calls
+     - Data transformation and deduplication algorithms
+     - Chart implementation with animated progress bars
+     - Recommendation system using TMDB API
+
+#### 2. **Side-by-Side Movie Comparison Tool** ⚖️
+   - **What it does**: Compare two movies head-to-head with visual metrics
+   - **Why it's impressive**:
+     - Unique feature rarely seen in movie apps
+     - Dual autocomplete search with debouncing
+     - Visual comparison charts (rating, popularity, runtime, budget)
+     - Real-time data fetching and synchronization
+   - **Technical skills showcased**: Complex UI state, dual async operations, creative problem-solving
+
+### Core Functionality
 - 🎭 **Browse Movies & TV Shows** - Explore trending content with beautiful, responsive movie cards
-- 🔍 **Advanced Search** - Search movies and TV shows with filters by genre, year, and type
+- 🔍 **Advanced Search** - Real-time search with auto-suggestions and media type filters
 - ⭐ **Favorites/Watchlist** - Save your favorite movies to a personalized watchlist
-- 💬 **Reviews** - Write and read reviews for movies (coming soon)
+- 💬 **Reviews & Ratings** - Write and read reviews for movies with star ratings
+- 📺 **Watch History** - Track your viewing history across all content
 - 👤 **User Profiles** - Manage your account with a personalized profile page
+
+### User Experience
 - 🔐 **Secure Authentication** - JWT-based authentication with user registration and login
-- 🌓 **Dark Mode** - Toggle between light and dark themes
-- 📱 **Responsive Design** - Works seamlessly on desktop, tablet, and mobile devices
+- 🎨 **Modern UI Design** - Minimal tech aesthetic with indigo/green/amber color scheme
+- ✨ **Smooth Animations** - Framer Motion animations throughout the interface
+- 💎 **Glass Morphism** - Modern backdrop blur effects and transparency
+- 📱 **Fully Responsive** - Works seamlessly on desktop, tablet, and mobile devices
+- 🎬 **Auto-Rotating Hero** - Eye-catching hero banner with trending content
+- 🎯 **Interactive Cards** - Hover effects with lift animation, shine overlay, and action buttons
+
+### Technical Features
+- 📦 **Token-Based Design System** - Centralized design tokens for consistent styling
+- 🔒 **Secure Backend** - Spring Security with BCrypt password hashing
+- 🗄️ **Flexible Database** - H2 for development, MySQL for production
+- 📝 **Comprehensive Logging** - SLF4J logging with proper log levels
+- 🌍 **CORS Configured** - Proper cross-origin resource sharing setup
+- ⚙️ **Environment Configuration** - Environment variables with sensible defaults
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 18** - UI framework
-- **Material-UI (MUI)** - Component library
-- **React Router** - Navigation
-- **Framer Motion** - Animations
-- **Axios** - HTTP client
-- **Context API** - State management
+- **React 18** - Modern UI framework with hooks and functional components
+- **Material-UI (MUI)** - Component library with custom theme
+- **React Router v6** - Client-side navigation
+- **Framer Motion** - Smooth animations and transitions
+- **Axios** - HTTP client for API calls
+- **Context API** - State management (Auth, Watchlist)
+- **Lodash** - Utility functions (debouncing, etc.)
 
 ### Backend
-- **Spring Boot 3.2.0** - Java framework
+- **Spring Boot 3.2.0** - Java framework with auto-configuration
 - **Spring Security** - Authentication & authorization
-- **Spring Data JPA** - Database abstraction
-- **JWT** - Token-based authentication
-- **H2 Database** - Development database
+- **Spring Data JPA** - Database abstraction layer
+- **JWT (JSON Web Tokens)** - Stateless authentication
+- **H2 Database** - Embedded database for development
 - **MySQL** - Production database (optional)
-- **Lombok** - Boilerplate reduction
+- **Lombok** - Boilerplate reduction (@Slf4j, @RequiredArgsConstructor, etc.)
+- **SLF4J** - Structured logging framework
 
 ### External APIs
-- **TMDb API** - Movie and TV show data
+- **TMDb API v3** - Movie and TV show data, images, and metadata
+
+## 🏗️ Architecture
+
+### Design Patterns
+- **MVC (Model-View-Controller)** - Backend architecture
+- **Component-Based Architecture** - Frontend structure
+- **Repository Pattern** - Data access abstraction
+- **DTO Pattern** - Data transfer between layers
+- **Context Provider Pattern** - Frontend state management
+- **Token-Based Design System** - Centralized design decisions
+
+### Code Quality
+- **Comprehensive Documentation** - JSDoc for JavaScript, Javadoc for Java
+- **Environment Configuration** - `.env.example` templates for both frontend and backend
+- **Proper Error Handling** - Global exception handler with standardized responses
+- **Structured Logging** - SLF4J with appropriate log levels (DEBUG, INFO, WARN, ERROR)
+- **Security Best Practices** - BCrypt password hashing, JWT token validation, CORS configuration
+- **Responsive Design** - Mobile-first approach with Material-UI breakpoints
 
 ## 📋 Prerequisites
 
@@ -71,18 +134,29 @@ mvn clean install
 
 #### Configure Environment Variables
 
-Create a `.env` file in the `backend/` directory or set the following environment variables:
+The backend supports configuration via environment variables. A template file `.env.example` is provided in the `backend/` directory.
 
-**Required:**
+**Quick Start (Development):**
 ```bash
-# JWT Configuration
-JWT_SECRET=your-256-bit-secret-key-please-change-this-in-production
+# Copy the example file
+cp .env.example .env
 
-# TMDb API (Optional - can be set in frontend)
-TMDB_API_KEY=your_tmdb_api_key
+# Edit .env and update the following:
+# - JWT_SECRET: Generate a secure secret (recommended: openssl rand -base64 64)
+# - Database credentials (if using MySQL)
 ```
 
-The backend uses H2 database by default for development (no additional setup required). The database file will be created automatically in `backend/data/moviedash.mv.db`.
+**Minimal Configuration:**
+The backend will work out of the box with default settings. The only critical setting for production is:
+
+```bash
+# In backend/.env or as environment variable
+JWT_SECRET=your-256-bit-secret-key-please-change-this-in-production-environment
+```
+
+The backend uses **H2 database** by default for development (no additional setup required). The database file will be created automatically in `backend/data/moviedash.mv.db`.
+
+For production, see the `.env.example` file for MySQL configuration options.
 
 #### Run the Backend
 
@@ -92,7 +166,13 @@ mvn spring-boot:run
 
 The backend will start on `http://localhost:8080`
 
-**H2 Database Console:** `http://localhost:8080/h2-console`
+**Verify Backend is Running:**
+```bash
+curl http://localhost:8080/auth/test
+# Expected response: {"success":true,"message":"MovieDash API is working!","data":{"status":"running"}}
+```
+
+**H2 Database Console (Development):** `http://localhost:8080/h2-console`
 - JDBC URL: `jdbc:h2:file:./data/moviedash`
 - Username: `sa`
 - Password: (leave empty)
@@ -102,27 +182,42 @@ The backend will start on `http://localhost:8080`
 #### Navigate to the frontend directory (root of project)
 
 ```bash
-# From the root directory
+# From backend directory, go back to root
+cd ..
+
+# Install dependencies
 npm install
 ```
 
 #### Configure Environment Variables
 
-Create a `.env` file in the root directory:
+A template file `.env.example` is provided in the root directory.
+
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit .env and update with your TMDb API credentials
+```
+
+**Required Configuration:**
+You need to get TMDb API credentials from [The Movie Database](https://www.themoviedb.org/):
+
+1. **Create a TMDb Account** - Sign up at [themoviedb.org](https://www.themoviedb.org/)
+2. **Get API Key** - Navigate to [Settings > API](https://www.themoviedb.org/settings/api)
+3. **Generate Read Access Token** - Follow the instructions in the API section
+
+Then update your `.env` file:
 
 ```bash
 # TMDb API Configuration
-REACT_APP_TMDB_API_KEY=your_tmdb_api_key
+REACT_APP_TMDB_API_KEY=your_tmdb_api_key_here
 REACT_APP_TMDB_API_BASE_URL=https://api.themoviedb.org/3
-REACT_APP_TMDB_API_READ_ACCESS_TOKEN=your_tmdb_read_access_token
+REACT_APP_TMDB_API_READ_ACCESS_TOKEN=your_tmdb_read_access_token_here
 
 # Backend API URL (default: http://localhost:8080)
-REACT_APP_API_URL=http://localhost:8080
+REACT_APP_API_BASE_URL=http://localhost:8080
 ```
-
-**Note:** You need both:
-- **API Key** - Get from [TMDb Settings](https://www.themoviedb.org/settings/api)
-- **Read Access Token** - Generate from [TMDb Developer](https://developer.themoviedb.org/docs/getting-started)
 
 #### Run the Frontend
 
@@ -130,7 +225,7 @@ REACT_APP_API_URL=http://localhost:8080
 npm start
 ```
 
-The frontend will start on `http://localhost:3000`
+The frontend will start on `http://localhost:3000` and automatically open in your default browser.
 
 ### 4. Access the Application
 

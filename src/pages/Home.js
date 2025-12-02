@@ -1,306 +1,292 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  getTrendingMovies,
-  searchMovies,
-  searchTVShows,
-  searchMulti,
+  getTrendingAll,
+  getPopularMovies,
+  getTopRatedMovies,
+  getUpcomingMovies,
+  getNowPlayingMovies,
 } from "../services/tmdbApi";
-import { Container, Grid, Typography, Box, CircularProgress } from "@mui/material";
-import { motion, AnimatePresence } from "framer-motion";
-import ModernMovieCard from "../components/ModernMovieCard";
-import SearchBar from "../components/SearchBar";
+import {
+  Box,
+  Typography,
+  Container,
+  CircularProgress,
+  Fade,
+  Fab,
+  Tooltip,
+} from "@mui/material";
+import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
+import { motion } from "framer-motion";
+import HeroSection from "../components/HeroSection";
+import MovieCarousel from "../components/MovieCarousel";
+import MovieComparison from "../components/MovieComparison";
+import { tokens, flexCenter } from "../theme";
 
+/**
+ * Home Page Component
+ *
+ * Main landing page featuring a hero section and multiple categorized movie carousels.
+ * Fetches data from TMDB API for various movie categories and displays them in
+ * horizontally scrollable carousels.
+ *
+ * Data Fetching Strategy:
+ * - All API calls made in parallel using Promise.all for optimal performance
+ * - Fetches on component mount only (empty dependency array)
+ * - Error handling with user-friendly error UI
+ * - Loading state with centered spinner
+ *
+ * Sections Displayed:
+ * 1. Hero Section - Top 5 trending items with auto-rotation
+ * 2. Trending Now - Items 6-25 from trending
+ * 3. Popular on MovieDash - Popular movies
+ * 4. Top Rated - Critically acclaimed content
+ * 5. Now Playing in Theaters - Current theatrical releases
+ * 6. Coming Soon - Upcoming releases
+ *
+ * @example
+ * <Route path="/" element={<Home />} />
+ */
 const Home = () => {
+  // State for different movie categories from TMDB API
   const [trendingMovies, setTrendingMovies] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
+  const [popularMovies, setPopularMovies] = useState([]);
+  const [topRatedMovies, setTopRatedMovies] = useState([]);
+  const [upcomingMovies, setUpcomingMovies] = useState([]);
+  const [nowPlayingMovies, setNowPlayingMovies] = useState([]);
+
+  // UI state management
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [page, setPage] = useState(1);
-  const [searchPage, setSearchPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const observerRef = useRef(null);
-  const lastMovieRef = useRef(null);
+  const [comparisonOpen, setComparisonOpen] = useState(false);
 
-  // Fetch initial trending movies
+  /**
+   * Fetch all movie categories on component mount
+   * Uses Promise.all for parallel fetching to optimize loading time
+   * Handles errors gracefully with user-friendly error message
+   */
   useEffect(() => {
-    const fetchTrendingMovies = async () => {
+    const fetchAllMovies = async () => {
       try {
-        const data = await getTrendingMovies(1);
-        setTrendingMovies(data.results);
-        setHasMore(data.page < data.total_pages);
+        setLoading(true);
+
+        // Fetch all categories in parallel for optimal performance
+        // Each API call fetches page 1 with ~20 results
+        const [trending, popular, topRated, upcoming, nowPlaying] = await Promise.all([
+          getTrendingAll(1),
+          getPopularMovies(1),
+          getTopRatedMovies(1),
+          getUpcomingMovies(1),
+          getNowPlayingMovies(1),
+        ]);
+
+        // Update state with results, fallback to empty array if undefined
+        setTrendingMovies(trending.results || []);
+        setPopularMovies(popular.results || []);
+        setTopRatedMovies(topRated.results || []);
+        setUpcomingMovies(upcoming.results || []);
+        setNowPlayingMovies(nowPlaying.results || []);
+
         setLoading(false);
       } catch (err) {
-        console.error("Error fetching trending movies:", err);
-        setError("Failed to fetch trending movies");
+        console.error("Error fetching movies:", err);
+        setError("Failed to fetch movies. Please try again later.");
         setLoading(false);
       }
     };
 
-    fetchTrendingMovies();
-  }, []);
+    fetchAllMovies();
+  }, []); // Empty dependency array - fetch only on mount
 
-  // Load more trending movies
-  const loadMoreTrendingMovies = useCallback(async () => {
-    if (loadingMore || !hasMore || isSearching) return;
 
-    setLoadingMore(true);
-    try {
-      const nextPage = page + 1;
-      const data = await getTrendingMovies(nextPage);
-      setTrendingMovies((prev) => [...prev, ...data.results]);
-      setPage(nextPage);
-      setHasMore(data.page < data.total_pages);
-    } catch (err) {
-      console.error("Error loading more movies:", err);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [page, hasMore, loadingMore, isSearching]);
-
-  // Load more search results
-  const loadMoreSearchResults = useCallback(async (query, mediaType, filters) => {
-    if (loadingMore || !hasMore) return;
-
-    setLoadingMore(true);
-    try {
-      const nextPage = searchPage + 1;
-      let data;
-      const params = {
-        query,
-        with_genres: filters.genres?.join(","),
-        "primary_release_date.gte": filters.startDate,
-        "primary_release_date.lte": filters.endDate,
-      };
-
-      switch (mediaType) {
-        case "movie":
-          data = await searchMovies(query, nextPage, params);
-          break;
-        case "tv":
-          data = await searchTVShows(query, nextPage, params);
-          break;
-        default:
-          data = await searchMulti(query, nextPage, params);
-      }
-
-      setSearchResults((prev) => [...prev, ...data.results]);
-      setSearchPage(nextPage);
-      setHasMore(data.page < data.total_pages);
-    } catch (err) {
-      console.error("Error loading more search results:", err);
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [searchPage, hasMore, loadingMore]);
-
-  // Intersection Observer for infinite scroll
-  useEffect(() => {
-    if (loading) return;
-
-    const options = {
-      root: null,
-      rootMargin: "200px",
-      threshold: 0.1,
-    };
-
-    observerRef.current = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore && !loadingMore) {
-        if (isSearching) {
-          // Store current search params - you'll need to pass these from handleSearch
-          // For now, we'll just trigger the trending movies load
-          loadMoreTrendingMovies();
-        } else {
-          loadMoreTrendingMovies();
-        }
-      }
-    }, options);
-
-    if (lastMovieRef.current) {
-      observerRef.current.observe(lastMovieRef.current);
-    }
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, [loading, hasMore, loadingMore, isSearching, loadMoreTrendingMovies]);
-
-  const handleSearch = async (query, mediaType, filters = {}) => {
-    if (!query.trim()) {
-      setIsSearching(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setIsSearching(true);
-    setSearchPage(1);
-
-    try {
-      let data;
-      const params = {
-        query,
-        with_genres: filters.genres?.join(","),
-        "primary_release_date.gte": filters.startDate,
-        "primary_release_date.lte": filters.endDate,
-      };
-
-      switch (mediaType) {
-        case "movie":
-          data = await searchMovies(query, 1, params);
-          break;
-        case "tv":
-          data = await searchTVShows(query, 1, params);
-          break;
-        default:
-          data = await searchMulti(query, 1, params);
-      }
-      setSearchResults(data.results);
-      setHasMore(data.page < data.total_pages);
-    } catch (err) {
-      console.error("Error searching:", err);
-      setError("Failed to search");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleBack = () => {
-    setIsSearching(false);
-    setSearchResults([]);
-    setSearchPage(1);
-    setHasMore(true);
-  };
-
-  if (loading)
+  // Loading state
+  if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Typography>Loading...</Typography>
-      </Container>
-    );
-
-  if (error)
-    return (
-      <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Typography color="error">{error}</Typography>
-      </Container>
-    );
-
-  return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
       <Box
-        component={motion.div}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
         sx={{
-          mb: 6,
-          position: "relative",
-          "&::after": {
-            content: '""',
-            position: "absolute",
-            bottom: "-16px",
-            left: "0",
-            width: "60px",
-            height: "4px",
-            backgroundColor: "primary.main",
-            borderRadius: "2px",
-          },
+          ...flexCenter(),
+          minHeight: "100vh",
+          backgroundColor: tokens.colors.dark[800],
         }}
       >
-        <Typography
-          variant="h2"
-          component="h1"
-          gutterBottom
-          sx={{
-            fontWeight: 700,
-            background: "linear-gradient(45deg, #1976d2, #90caf9)",
-            backgroundClip: "text",
-            WebkitBackgroundClip: "text",
-            color: "transparent",
-            textShadow: "2px 2px 4px rgba(0,0,0,0.1)",
-            mb: 2,
-          }}
-        >
-          Welcome to Movie Dash
-        </Typography>
-        <Typography
-          variant="h4"
-          component={motion.h2}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-          sx={{
-            color: "text.secondary",
-            fontWeight: 500,
-            letterSpacing: "0.5px",
-          }}
-        >
-          {isSearching ? "Search Results" : "Trending Movies"}
-        </Typography>
-      </Box>
-
-      <SearchBar onSearch={handleSearch} onBack={handleBack} />
-
-      <AnimatePresence mode="wait">
-        <Grid container spacing={3}>
-          {(isSearching ? searchResults : trendingMovies).map((item, index) => {
-            const isLastItem = index === (isSearching ? searchResults : trendingMovies).length - 1;
-            return (
-              <Grid
-                item
-                xs={12}
-                sm={6}
-                md={4}
-                lg={3}
-                key={`${item.id}-${index}`}
-                ref={isLastItem ? lastMovieRef : null}
-                component={motion.div}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-              >
-                <ModernMovieCard movie={item} />
-              </Grid>
-            );
-          })}
-        </Grid>
-      </AnimatePresence>
-
-      {/* Loading indicator for infinite scroll */}
-      {loadingMore && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            py: 4,
-          }}
-        >
-          <CircularProgress />
-        </Box>
-      )}
-
-      {/* End of results indicator */}
-      {!hasMore && !loading && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            py: 4,
-          }}
-        >
-          <Typography variant="body1" color="text.secondary">
-            No more movies to load
+        <Box sx={{ textAlign: "center" }}>
+          <CircularProgress
+            size={60}
+            sx={{
+              color: tokens.colors.brand.primary,
+              mb: 3,
+            }}
+          />
+          <Typography
+            variant="h6"
+            sx={{
+              color: tokens.colors.light[300],
+              fontWeight: tokens.typography.fontWeight.medium,
+            }}
+          >
+            Loading amazing content...
           </Typography>
         </Box>
-      )}
-    </Container>
+      </Box>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 8 }}>
+        <Box
+          sx={{
+            textAlign: "center",
+            py: 8,
+            px: 4,
+            backgroundColor: tokens.colors.dark[700],
+            borderRadius: tokens.borderRadius.xl,
+          }}
+        >
+          <Typography
+            variant="h4"
+            sx={{
+              color: tokens.colors.semantic.error,
+              mb: 2,
+              fontWeight: tokens.typography.fontWeight.bold,
+            }}
+          >
+            Oops! Something went wrong
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{ color: tokens.colors.light[400] }}
+          >
+            {error}
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        backgroundColor: tokens.colors.dark[800],
+        pb: 8,
+      }}
+    >
+      {/* Main Browse View */}
+      <Fade in={true}>
+        <Box>
+            {/* Hero Section */}
+            <HeroSection movies={trendingMovies.slice(0, 5)} />
+
+            {/* Floating Action Button for Movie Comparison */}
+            <Tooltip title="Compare Movies" placement="left">
+              <Fab
+                color="primary"
+                aria-label="compare"
+                onClick={() => setComparisonOpen(true)}
+                sx={{
+                  position: "fixed",
+                  bottom: 32,
+                  right: 32,
+                  background: tokens.gradients.primary,
+                  boxShadow: `0 8px 24px ${tokens.colors.brand.primary}40`,
+                  transition: tokens.transitions.all,
+                  "&:hover": {
+                    transform: "scale(1.1) rotate(180deg)",
+                    boxShadow: `0 12px 32px ${tokens.colors.brand.primary}60`,
+                  },
+                }}
+              >
+                <CompareArrowsIcon />
+              </Fab>
+            </Tooltip>
+
+            {/* Movie Carousels */}
+            <Container maxWidth="xl" sx={{ mt: -8 }}>
+              {/* Trending Now */}
+              {trendingMovies.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                >
+                  <MovieCarousel
+                    title="Trending Now"
+                    subtitle="What's hot this week"
+                    movies={trendingMovies.slice(5, 25)}
+                  />
+                </motion.div>
+              )}
+
+              {/* Popular Movies */}
+              {popularMovies.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                  <MovieCarousel
+                    title="Popular on MovieDash"
+                    subtitle="Crowd favorites"
+                    movies={popularMovies}
+                  />
+                </motion.div>
+              )}
+
+              {/* Top Rated */}
+              {topRatedMovies.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                >
+                  <MovieCarousel
+                    title="Top Rated"
+                    subtitle="Critically acclaimed"
+                    movies={topRatedMovies}
+                  />
+                </motion.div>
+              )}
+
+              {/* Now Playing */}
+              {nowPlayingMovies.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                >
+                  <MovieCarousel
+                    title="Now Playing in Theaters"
+                    subtitle="In cinemas now"
+                    movies={nowPlayingMovies}
+                  />
+                </motion.div>
+              )}
+
+              {/* Coming Soon */}
+              {upcomingMovies.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.5 }}
+                >
+                  <MovieCarousel
+                    title="Coming Soon"
+                    subtitle="Upcoming releases"
+                    movies={upcomingMovies}
+                  />
+                </motion.div>
+              )}
+            </Container>
+          </Box>
+        </Fade>
+
+        {/* Movie Comparison Modal */}
+        <MovieComparison
+          open={comparisonOpen}
+          onClose={() => setComparisonOpen(false)}
+        />
+    </Box>
   );
 };
 

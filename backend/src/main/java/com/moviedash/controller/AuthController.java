@@ -16,6 +16,30 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * AuthController
+ *
+ * REST controller for user authentication and authorization operations.
+ * Handles user registration, login, logout, and authentication status checks.
+ *
+ * Base Path: /auth
+ *
+ * Authentication Flow:
+ * 1. User registers or logs in with credentials
+ * 2. Server validates credentials and generates JWT token
+ * 3. Client stores token and includes it in subsequent requests
+ * 4. JwtAuthenticationFilter validates token for protected endpoints
+ *
+ * Security Notes:
+ * - Uses JWT (JSON Web Tokens) for stateless authentication
+ * - Passwords are hashed using BCrypt before storage
+ * - CORS enabled for localhost:3000 (React frontend)
+ * - All endpoints return standardized ApiResponse wrapper
+ *
+ * @see UserService for business logic
+ * @see JwtUtil for token generation and validation
+ * @see ApiResponse for response format
+ */
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor

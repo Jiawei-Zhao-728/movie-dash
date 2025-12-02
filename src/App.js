@@ -1,70 +1,21 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import {
-  ThemeProvider as MuiThemeProvider,
-  createTheme,
-  CssBaseline,
-} from "@mui/material";
-import { ThemeProvider } from "./context/ThemeContext";
+import { ThemeProvider as MuiThemeProvider, CssBaseline } from "@mui/material";
 import { AuthProvider } from "./context/AuthContext";
 import { WatchlistProvider } from "./context/WatchlistContext";
-import { useTheme } from "./context/ThemeContext";
+import { createCustomTheme } from "./theme";
 import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 import MovieDetail from "./pages/MovieDetail";
 import Profile from "./pages/Profile";
 import Favorites from "./pages/Favorites";
-import ThemeToggle from "./components/ThemeToggle";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import Header from "./components/Header";
 
 const AppContent = () => {
-  const { isDarkMode } = useTheme();
-
-  const theme = createTheme({
-    palette: {
-      mode: isDarkMode ? "dark" : "light",
-      primary: {
-        main: "#1976d2",
-        light: "#42a5f5",
-        dark: "#1565c0",
-      },
-      secondary: {
-        main: "#dc004e",
-      },
-      background: {
-        default: isDarkMode ? "#121212" : "#f5f5f5",
-        paper: isDarkMode ? "#1e1e1e" : "#ffffff",
-      },
-    },
-    components: {
-      MuiCard: {
-        styleOverrides: {
-          root: {
-            boxShadow: isDarkMode
-              ? "0 4px 20px rgba(0,0,0,0.5)"
-              : "0 4px 20px rgba(0,0,0,0.1)",
-          },
-        },
-      },
-      MuiIconButton: {
-        styleOverrides: {
-          root: {
-            transition: "all 0.2s ease",
-          },
-        },
-      },
-    },
-    typography: {
-      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-      h1: {
-        fontWeight: 700,
-      },
-      h2: {
-        fontWeight: 600,
-      },
-    },
-  });
+  // Always use dark mode theme
+  const theme = React.useMemo(() => createCustomTheme("dark"), []);
 
   return (
     <MuiThemeProvider theme={theme}>
@@ -72,13 +23,13 @@ const AppContent = () => {
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/movie/:id" element={<MovieDetail />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/favorites" element={<Favorites />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Routes>
-      <ThemeToggle />
     </MuiThemeProvider>
   );
 };
@@ -86,13 +37,11 @@ const AppContent = () => {
 function App() {
   return (
     <Router>
-      <ThemeProvider>
-        <AuthProvider>
-          <WatchlistProvider>
-            <AppContent />
-          </WatchlistProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <AuthProvider>
+        <WatchlistProvider>
+          <AppContent />
+        </WatchlistProvider>
+      </AuthProvider>
     </Router>
   );
 }
